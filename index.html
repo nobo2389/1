@@ -48,9 +48,63 @@ HP：<span id="hp">100</span><br>
 
 <p id="log"></p>
 
-<script>
+<scriptfunction equip(){
 
-let player={
+if(player.gold>=100){
+
+player.gold-=100;
+player.atk+=10;
+
+weapon="鉄の剣";
+
+document.getElementById("weapon").textContent=weapon;
+
+update();
+
+log("鉄の剣を装備した！");
+
+}else{
+
+log("お金が足りない");
+
+}
+
+}
+
+
+function useItem(){
+
+if(items>0){
+
+items--;
+
+player.hp+=50;
+
+if(player.hp>100){
+player.hp=100;
+}
+
+update();
+
+log("回復薬を使った！");
+
+}else{
+
+log("回復薬がない");
+
+}
+
+}>
+
+let player={let weapon = "木の剣";
+let armor = "布の服";
+
+let items = 3;
+
+let friends = [
+"戦士",
+"魔法使い"
+];
 hp:100,
 atk:10,
 lv:1,
@@ -199,5 +253,15 @@ document.getElementById("log").textContent=t;
 
 </script>
 
-</body>
+<h3>装備</h3>
+<p>
+武器：<span id="weapon">木の剣</span><br>
+防具：<span id="armor">布の服</span>
+</p>
+
+<button onclick="equip()">🗡️武器強化</button>
+<button onclick="useItem()">🎒回復薬</button>
+
+<h3>仲間</h3>
+<p>👥 戦士・魔法使い</p></body>
 </html>
