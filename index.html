@@ -47,7 +47,7 @@
         let paddleColor = "#00ffff";
         let paddleTimer = 0;
 
-        // ボール配列（マルチボール対応）
+        // ボール配列
         let balls = [];
         const ballRadius = 7;
 
@@ -61,14 +61,13 @@
         const brickOffsetLeft = 15;
         let bricks = [];
 
-        // パーティクル（火花）配列
+        // パーティクル配列
         let particles = [];
 
         // アイテム配列
         let items = [];
-        const itemSize = 16;
 
-        // ブロックの色（段ごとにグラデーション）
+        // ブロックの色
         const colors = ["#ff0055", "#ff5500", "#ffcc00", "#33ff00", "#00ffff", "#aa00ff"];
 
         function initGame() {
@@ -84,7 +83,6 @@
             for(let c=0; c<brickCols; c++) {
                 bricks[c] = [];
                 for(let r=0; r<brickRows; r++) {
-                    // 15%の確率でアイテム持ちブロックにする
                     let itemType = 0;
                     if(Math.random() < 0.25) {
                         itemType = Math.random() < 0.5 ? 1 : 2; // 1:ワイド, 2:マルチ
@@ -184,10 +182,13 @@
                         ctx.shadowColor = b.color;
                         ctx.fillStyle = b.color;
                         ctx.beginPath();
-                        ctx.roundRect(bx, by, brickWidth, brickHeight, 3);
+                        if (ctx.roundRect) {
+                            ctx.roundRect(bx, by, brickWidth, brickHeight, 3);
+                        } else {
+                            ctx.rect(bx, by, brickWidth, brickHeight);
+                        }
                         ctx.fill();
                         
-                        // アイテムマーク（うっすら光る）
                         if(b.item > 0) {
                             ctx.fillStyle = "#fff";
                             ctx.font = "10px sans-serif";
@@ -196,7 +197,7 @@
                     }
                 }
             }
-            ctx.shadowBlur = 0; // シャドウリセット
+            ctx.shadowBlur = 0;
 
             if(activeBricks === 0) { gameOver(true); return; }
 
@@ -205,30 +206,30 @@
             ctx.shadowColor = paddleColor;
             ctx.fillStyle = paddleColor;
             ctx.beginPath();
-            ctx.roundRect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight, 5);
+            if (ctx.roundRect) {
+                ctx.roundRect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight, 5);
+            } else {
+                ctx.rect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight);
+            }
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // 4. ボールの処理（逆ループで削除対応）
+            // 4. ボールの処理
             for(let i = balls.length - 1; i >= 0; i--) {
                 let ball = balls[i];
                 
-                // 壁バウンド
                 if(ball.x + ball.dx > canvas.width - ballRadius || ball.x + ball.dx < ballRadius) ball.dx = -ball.dx;
                 if(ball.y + ball.dy < ballRadius) ball.dy = -ball.dy;
 
-                // パドルバウンド
                 let pTop = canvas.height - paddleHeight - 15;
                 if(ball.y + ball.dy >= pTop && ball.y <= pTop + paddleHeight) {
                     if(ball.x > paddleX && ball.x < paddleX + paddleWidth) {
-                        // 当たる位置によって反射角を変える
                         let hitPos = (ball.x - paddleX) / paddleWidth;
                         ball.dx = 8 * (hitPos - 0.5);
                         ball.dy = -Math.abs(ball.dy);
                     }
                 }
 
-                // ブロックとの衝突判定
                 for(let c=0; c<brickCols; c++) {
                     for(let r=0; r<brickRows; r++) {
                         let b = bricks[c][r];
@@ -240,7 +241,6 @@
                                 updateHUD();
                                 createParticles(ball.x, ball.y, b.color);
                                 
-                                // アイテムドロップ
                                 if(b.item > 0) spawnItem(b.x + brickWidth/2, b.y + brickHeight, b.item);
                             }
                         }
@@ -250,4 +250,3 @@
                 ball.x += ball.dx;
                 ball.y += ball.dy;
 
-                // ボールの描画
