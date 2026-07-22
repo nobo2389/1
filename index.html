@@ -37,7 +37,28 @@ button{
 </head>
 
 <body>
+<div id="shop" class="card" style="display:none">
 
+<h2>🏪武器屋</h2>
+
+<p>鉄の剣 100G</p>
+
+<button onclick="buySword()">購入</button>
+
+<button onclick="closeShop()">閉じる</button>
+
+</div>
+
+
+<div id="bag" class="card" style="display:none">
+
+<h2>🎒アイテム</h2>
+
+<p id="items">回復薬 ×3</p>
+
+<button onclick="closeBag()">閉じる</button>
+
+</div>
 <h1>⚔️ 強化RPG ⚔️</h1>
 
 <h2 id="place">🌱草原</h2>
@@ -68,7 +89,8 @@ button{
 敵HP：
 <span id="ehp">0</span>
 </p>
-
+<button onclick="openShop()">🏪店</button>
+<button onclick="openBag()">🎒アイテム</button>
 <button onclick="move()">🗺️移動</button>
 <button onclick="up()">⬆️</button>
 <button onclick="down()">⬇️</button>
@@ -569,6 +591,52 @@ player.gold+=100;
 update();
 
 }
+
+}function openShop(){
+
+document.getElementById("shop").style.display="block";
+
+}
+
+
+function closeShop(){
+
+document.getElementById("shop").style.display="none";
+
+}
+
+
+function buySword(){
+
+if(player.gold>=100){
+
+player.gold-=100;
+
+player.atk+=10;
+
+log("鉄の剣を買った！");
+
+update();
+
+}else{
+
+log("お金が足りない");
+
+}
+
+}
+
+
+function openBag(){
+
+document.getElementById("bag").style.display="block";
+
+}
+
+
+function closeBag(){
+
+document.getElementById("bag").style.display="none";
 
 }</script>
 
