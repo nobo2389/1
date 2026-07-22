@@ -2,38 +2,70 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>クリックゲーム</title>
+<title>敵とステージゲーム</title>
 <style>
 body{
-    text-align:center;
-    font-family:sans-serif;
-    margin-top:100px;
+ text-align:center;
+ font-family:sans-serif;
+ margin-top:50px;
 }
+
+#enemy{
+ font-size:50px;
+}
+
 button{
-    font-size:30px;
-    padding:20px 40px;
-}
-#score{
-    font-size:40px;
-    margin:20px;
+ font-size:25px;
+ padding:15px 30px;
 }
 </style>
 </head>
+
 <body>
 
-<h1>クリックゲーム</h1>
+<h1>冒険ゲーム</h1>
 
-<div id="score">0</div>
+<h2>ステージ <span id="stage">1</span></h2>
 
-<button onclick="add()">押す！</button>
+<div id="enemy">👾</div>
+
+<p>敵HP：<span id="hp">10</span></p>
+<p>スコア：<span id="score">0</span></p>
+
+<button onclick="attack()">攻撃！</button>
 
 <script>
+
+let stage = 1;
+let hp = 10;
 let score = 0;
 
-function add(){
-    score++;
-    document.getElementById("score").textContent = score;
+function attack(){
+
+ hp--;
+
+ document.getElementById("hp").textContent = hp;
+
+ if(hp <= 0){
+
+   score += 10;
+
+   document.getElementById("score").textContent = score;
+
+   stage++;
+
+   document.getElementById("stage").textContent = stage;
+
+   hp = stage * 10;
+
+   document.getElementById("hp").textContent = hp;
+
+   alert("次のステージ！");
+
+ }
+
 }
+
 </script>
 
 </body>
