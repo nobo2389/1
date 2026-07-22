@@ -60,7 +60,7 @@ button{
 <button onclick="boss()">🐲ボス戦</button>
 <button onclick="save()">💾セーブ</button>
 <button onclick="load()">📂ロード</button><p id="log"></p>
-
+<button onclick="partyAttack()">👥仲間攻撃</button>
 
 <script>
 
@@ -73,7 +73,25 @@ gold:100
 };
 
 let enemyHp=0;
-let x=2;
+let party=[
+{
+name:"戦士",
+skill:"強打",
+power:30
+},
+{
+name:"魔法使い",
+skill:"ファイア",
+power:40
+},
+{
+name:"僧侶",
+skill:"回復",
+power:-30
+}
+];
+
+let partyIndex=0;let x=2;
 let y=2;
 
 let map=[
@@ -442,7 +460,47 @@ log("城に到着！");
 }
 
 
-drawMap();</script>
+drawMap();function partyAttack(){
+
+let member=party[partyIndex];
+
+
+if(member.name=="僧侶"){
+
+player.hp+=30;
+
+if(player.hp>100)
+player.hp=100;
+
+log(
+member.name+"の"+member.skill+
+"！HP回復"
+);
+
+update();
+
+}else{
+
+enemyHp-=member.power;
+
+log(
+member.name+"の"+member.skill+
+"！"+member.power+"ダメージ"
+);
+
+document.getElementById("ehp").textContent=enemyHp;
+
+}
+
+partyIndex++;
+
+if(partyIndex>=party.length){
+
+partyIndex=0;
+
+}
+
+}</script>
 
 </body>
 </html>
