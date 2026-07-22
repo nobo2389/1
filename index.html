@@ -2,105 +2,223 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>RPGバトル</title>
+<title>RPGゲーム</title>
 
 <style>
 body{
-  text-align:center;
-  font-family:sans-serif;
-  margin-top:40px;
-}
-
-.character{
-  font-size:60px;
+ text-align:center;
+ font-family:sans-serif;
+ margin-top:30px;
 }
 
 button{
-  font-size:25px;
-  padding:15px 30px;
+ font-size:18px;
+ padding:10px 20px;
+ margin:5px;
 }
 
-#log{
-  margin:20px;
-  height:60px;
+.big{
+ font-size:50px;
 }
 </style>
-
 </head>
 
 <body>
 
-<h1>⚔️ RPGバトル ⚔️</h1>
+<h1>⚔️ RPG冒険 ⚔️</h1>
 
 <h2>ステージ <span id="stage">1</span></h2>
 
-<div class="character">🧙</div>
-<p>勇者HP：<span id="playerHP">100</span></p>
+<div class="big" id="enemy">👾</div>
 
-<div class="character">👾</div>
-<p>敵HP：<span id="enemyHP">30</span></p>
+<p>勇者HP：<span id="hp">100</span></p>
+<p>攻撃力：<span id="atk">10</span></p>
+<p>レベル：<span id="lv">1</span></p>
+<p>経験値：<span id="exp">0</span></p>
+<p>お金：<span id="gold">0</span>G</p>
 
-<button onclick="attack()">攻撃する</button>
+<p>敵HP：<span id="enemyHP">50</span></p>
+
+<button onclick="attack()">⚔️攻撃</button>
+<button onclick="skill()">🔥必殺技</button>
+<button onclick="heal()">💊回復</button>
+<button onclick="upgrade()">🗡️武器強化</button>
 
 <p id="log">敵が現れた！</p>
+
 
 <script>
 
 let stage = 1;
-let playerHP = 100;
-let enemyHP = 30;
+let hp = 100;
+let atk = 10;
+let lv = 1;
+let exp = 0;
+let gold = 0;
+
+let enemyHP = 50;
+
+let enemies = ["👾","🐺","🧟","🐉"];
+
+
+function newEnemy(){
+
+ if(stage % 5 == 0){
+   document.getElementById("enemy").textContent="🐲";
+   enemyHP = stage * 80;
+ }else{
+   let e=enemies[Math.floor(Math.random()*enemies.length)];
+   document.getElementById("enemy").textContent=e;
+   enemyHP = stage * 50;
+ }
+
+ document.getElementById("enemyHP").textContent=enemyHP;
+
+}
 
 
 function attack(){
 
- let damage = Math.floor(Math.random()*15)+5;
- enemyHP -= damage;
+let damage = Math.floor(Math.random()*atk)+atk;
 
- document.getElementById("log").textContent =
- "勇者の攻撃！敵に " + damage + " ダメージ！";
+enemyHP -= damage;
 
-
- if(enemyHP <= 0){
-
-   stage++;
-
-   document.getElementById("stage").textContent = stage;
-
-   enemyHP = stage * 30;
-
-   document.getElementById("enemyHP").textContent = enemyHP;
-
-   document.getElementById("log").textContent =
-   "敵を倒した！ステージ" + stage + "へ！";
-
-   return;
- }
+battleLog("攻撃！"+damage+"ダメージ");
 
 
- // 敵の反撃
- let enemyDamage = Math.floor(Math.random()*10)+5;
+enemyTurn();
 
- playerHP -= enemyDamage;
-
-
- document.getElementById("playerHP").textContent = playerHP;
-
-
- document.getElementById("enemyHP").textContent = enemyHP;
-
-
- document.getElementById("log").textContent +=
- " 敵の反撃！" + enemyDamage + "ダメージ！";
-
-
- if(playerHP <= 0){
-
-   document.getElementById("log").textContent =
-   "ゲームオーバー…";
-
- }
+checkEnemy();
 
 }
+
+
+function skill(){
+
+let damage = atk*3;
+
+enemyHP -= damage;
+
+battleLog("🔥必殺技！"+damage+"ダメージ");
+
+enemyTurn();
+
+checkEnemy();
+
+}
+
+
+function heal(){
+
+hp += 30;
+
+if(hp>100) hp=100;
+
+document.getElementById("hp").textContent=hp;
+
+battleLog("💊HPを回復した");
+
+enemyTurn();
+
+}
+
+
+function enemyTurn(){
+
+if(enemyHP<=0)return;
+
+let damage=Math.floor(Math.random()*15)+5;
+
+hp-=damage;
+
+document.getElementById("hp").textContent=hp;
+
+battleLog(
+document.getElementById("log").textContent+
+" 敵の攻撃 "+damage+"ダメージ"
+);
+
+
+if(hp<=0){
+
+document.getElementById("log").textContent=
+"ゲームオーバー";
+
+}
+
+}
+
+
+function checkEnemy(){
+
+document.getElementById("enemyHP").textContent=enemyHP;
+
+
+if(enemyHP<=0){
+
+gold+=50;
+exp+=30;
+
+document.getElementById("gold").textContent=gold;
+document.getElementById("exp").textContent=exp;
+
+
+battleLog("敵を倒した！");
+
+
+if(exp>=lv*100){
+
+lv++;
+atk+=5;
+exp=0;
+
+document.getElementById("lv").textContent=lv;
+document.getElementById("atk").textContent=atk;
+
+battleLog("レベルアップ！");
+
+}
+
+
+stage++;
+
+document.getElementById("stage").textContent=stage;
+
+newEnemy();
+
+}
+
+}
+
+
+function upgrade(){
+
+if(gold>=100){
+
+gold-=100;
+atk+=10;
+
+document.getElementById("gold").textContent=gold;
+document.getElementById("atk").textContent=atk;
+
+battleLog("武器を強化した！");
+
+}else{
+
+battleLog("お金が足りない");
+
+}
+
+}
+
+
+function battleLog(t){
+
+document.getElementById("log").textContent=t;
+
+}
+
+newEnemy();
 
 </script>
 
