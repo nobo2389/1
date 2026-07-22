@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>クリックゲーム</title>
+<style>
+body{
+    text-align:center;
+    font-family:sans-serif;
+    margin-top:100px;
+}
+button{
+    font-size:30px;
+    padding:20px 40px;
+}
+#score{
+    font-size:40px;
+    margin:20px;
+}
+</style>
+</head>
+<body>
+
+<h1>クリックゲーム</h1>
+
+<div id="score">0</div>
+
+<button onclick="add()">押す！</button>
+
+<script>
+let score = 0;
+
+function add(){
+    score++;
+    document.getElementById("score").textContent = score;
+}
+</script>
+
+</body>
+</html>
