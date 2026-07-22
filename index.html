@@ -2,69 +2,105 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>ミニRPG</title>
+<title>冒険RPG</title>
 <style>
-body{text-align:center;font-family:sans-serif}
-button{font-size:18px;margin:5px;padding:10px}
-.box{font-size:50px}
+body{
+ text-align:center;
+ font-family:sans-serif;
+}
+button{
+ font-size:20px;
+ margin:5px;
+ padding:10px 20px;
+}
+#map{
+ font-size:40px;
+}
 </style>
 </head>
 
 <body>
 
-<h1>⚔️ ミニRPG ⚔️</h1>
+<h1>🗺️ 冒険RPG</h1>
 
-<h2>ステージ <span id="stage">1</span></h2>
+<h2 id="place">🌱草原</h2>
 
-<div class="box" id="enemy">👾</div>
+<div id="map">🌲🌲🌱🌲🌲</div>
 
-<p>勇者HP：<span id="hp">100</span></p>
-<p>攻撃力：<span id="atk">10</span></p>
-<p>レベル：<span id="lv">1</span></p>
-<p>経験値：<span id="exp">0</span></p>
-<p>お金：<span id="gold">0</span>G</p>
-<p>敵HP：<span id="ehp">50</span></p>
+<p>
+HP：<span id="hp">100</span><br>
+攻撃力：<span id="atk">10</span><br>
+レベル：<span id="lv">1</span><br>
+経験値：<span id="exp">0</span><br>
+お金：<span id="gold">0</span>G
+</p>
 
+<div id="enemy">
+敵はいない
+</div>
+
+<p>敵HP：<span id="ehp">0</span></p>
+
+<button onclick="move()">🚶進む</button>
 <button onclick="attack()">⚔️攻撃</button>
 <button onclick="magic()">🔥魔法</button>
 <button onclick="heal()">💊回復</button>
-<button onclick="save()">💾保存</button>
 
 <p id="log"></p>
 
 <script>
 
-let p={
+let player={
 hp:100,
 atk:10,
 lv:1,
 exp:0,
-gold:0,
-stage:1
+gold:0
 };
 
-let enemyHP=50;
+let place="🌱草原";
+let enemyHP=0;
 
-let monsters=["👾","🐺","🧟","🐉"];
+let monsters=["👾スライム","🐺オオカミ","🧟ゾンビ","🐉ドラゴン"];
 
+function move(){
 
-function enemy(){
-document.getElementById("enemy").textContent=
-monsters[Math.floor(Math.random()*monsters.length)];
+let r=Math.random();
 
-enemyHP=p.stage*50;
+if(r<0.7){
+
+let monster=monsters[Math.floor(Math.random()*monsters.length)];
+
+enemyHP=player.lv*50;
+
+document.getElementById("enemy").textContent=monster+"が出現！";
+
 document.getElementById("ehp").textContent=enemyHP;
+
+}else{
+
+place="🏰城";
+
+document.getElementById("place").textContent=place;
+
+log("城に到着した！");
+
+}
+
 }
 
 
 function attack(){
 
-let d=p.atk+Math.floor(Math.random()*10);
-enemyHP-=d;
+if(enemyHP<=0)return;
 
-log("攻撃 "+d+"ダメージ");
+let damage=player.atk+Math.floor(Math.random()*10);
 
-turn();
+enemyHP-=damage;
+
+log("攻撃！"+damage+"ダメージ");
+
+enemyAttack();
 
 check();
 
@@ -73,13 +109,13 @@ check();
 
 function magic(){
 
-let d=30;
+if(enemyHP<=0)return;
 
-enemyHP-=d;
+enemyHP-=30;
 
-log("🔥魔法 "+d+"ダメージ");
+log("🔥魔法攻撃！30ダメージ");
 
-turn();
+enemyAttack();
 
 check();
 
@@ -88,26 +124,24 @@ check();
 
 function heal(){
 
-p.hp+=30;
+player.hp+=30;
 
-if(p.hp>100)p.hp=100;
+if(player.hp>100)player.hp=100;
 
 update();
 
-log("HP回復");
-
-turn();
+log("HPを回復した");
 
 }
 
 
-function turn(){
+function enemyAttack(){
 
 if(enemyHP<=0)return;
 
 let d=Math.floor(Math.random()*15)+5;
 
-p.hp-=d;
+player.hp-=d;
 
 update();
 
@@ -118,48 +152,41 @@ function check(){
 
 if(enemyHP<=0){
 
-p.exp+=30;
-p.gold+=50;
+player.exp+=30;
 
-if(p.exp>=100){
+player.gold+=50;
 
-p.lv++;
-p.atk+=5;
-p.exp=0;
+if(player.exp>=100){
+
+player.lv++;
+player.atk+=5;
+player.exp=0;
+
+log("レベルアップ！");
 
 }
 
-p.stage++;
+enemyHP=0;
 
-enemy();
+document.getElementById("enemy").textContent=
+"敵はいない";
+
+document.getElementById("ehp").textContent=0;
 
 update();
 
-log("敵を倒した！");
-
 }
-
-}
-
-
-function save(){
-
-localStorage.rpg=JSON.stringify(p);
-
-log("保存しました");
 
 }
 
 
 function update(){
 
-hp.textContent=p.hp;
-atk.textContent=p.atk;
-lv.textContent=p.lv;
-exp.textContent=p.exp;
-gold.textContent=p.gold;
-stage.textContent=p.stage;
-ehp.textContent=enemyHP;
+hp.textContent=player.hp;
+atk.textContent=player.atk;
+lv.textContent=player.lv;
+exp.textContent=player.exp;
+gold.textContent=player.gold;
 
 }
 
@@ -169,9 +196,6 @@ function log(t){
 document.getElementById("log").textContent=t;
 
 }
-
-
-enemy();
 
 </script>
 
