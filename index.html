@@ -1,679 +1,190 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>強化RPG</title>
-
-<style>
-body{
-  max-width:600px;
-  margin:auto;
-  padding:10px;
-}
-
-button{
-  width:45%;
-  font-size:18px;
-}.card{
- background:#eee;
- border-radius:15px;
- padding:10px;
- margin:10px;
-}
-
-.character{
- font-size:70px;
-}
-
-.effect{
- font-size:40px;
-}body{
- text-align:center;
- font-family:sans-serif;
-}
-
-button{
- font-size:18px;
- padding:10px;
- margin:5px;
-}
-
-#map{
- font-size:40px;
-}
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>スマホ対応 ブロック崩し</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; overflow: hidden; }
+        canvas { background: #222; box-shadow: 0 0 20px rgba(0,0,0,0.8); max-width: 100vw; max-height: 70vh; }
+        #msg { color: #fff; font-size: 20px; margin-bottom: 10px; font-weight: bold; }
+        #btn { padding: 12px 24px; font-size: 18px; margin-top: 15px; background: #0095DD; color: white; border: none; border-radius: 5px; cursor: pointer; display: none; }
+    </style>
 </head>
-
 <body>
-<audio id="bgm" loop>
-</audio>
-
-<audio id="attackSound">
-</audio>
-
-<audio id="magicSound">
-</audio><div id="shop" class="card" style="display:none">
-
-<h2>🏪武器屋</h2>
-
-<p>鉄の剣 100G</p>
-
-<button onclick="buySword()">購入</button>
-
-<button onclick="closeShop()">閉じる</button>
-
-</div>
-
-
-<div id="bag" class="card" style="display:none">
-
-<h2>🎒アイテム</h2>
-
-<p id="items">回復薬 ×3</p>
-
-<button onclick="closeBag()">閉じる</button>
-
-</div>
-<h1>⚔️ 強化RPG ⚔️</h1>
-
-<h2 id="place">🌱草原</h2>
-
-<div id="map">🌲🌱🌲</div>
-
-<p>
-❤️ HP：<span id="hp">100</span><br>
-⚔️ 攻撃：<span id="atk">10</span><br>
-⭐ Lv：<span id="lv">1</span><br>
-経験値：<span id="exp">0</span><br>
-💰お金：<span id="gold">0</span>
-</p>
-
-<div <div class="card">
-
-<div class="character" id="hero">🧙</div>
-
-<div class="effect" id="effect"></div>
-
-<div class="character" id="enemy">
-👾
-</div>
-
-</div>
-
-<p>
-敵HP：
-<span id="ehp">0</span>
-</p>
-<button onclick="openShop()">🏪店</button>
-<button onclick="openBag()">🎒アイテム</button>
-<button onclick="move()">🗺️移動</button>
-<button onclick="up()">⬆️</button>
-<button onclick="down()">⬇️</button>
-<button onclick="left()">⬅️</button>
-<button onclick="right()">➡️</button><button onclick="attack()">⚔️攻撃</button>
-<button onclick="magic()">🔥魔法</button>
-<button onclick="heal()">💊回復</button>
-<button onclick="shop()">🏪店</button>
-<button onclick="equip()">🗡️装備</button>
-<button onclick="item()">🎒アイテム</button>
-<button onclick="friend()">👥仲間</button>
-<button onclick="boss()">🐲ボス戦</button>
-<button onclick="save()">💾セーブ</button>
-<button onclick="load()">📂ロード</button><p id="log"></p>
-<button onclick="partyAttack()">👥仲間攻撃</button>
-<button onclick="talk()">💬話す</button>
-<button onclick="quest()">📜クエスト</button>
-<script>
-
-let player={
-hp:100,
-atk:10,
-lv:1,
-exp:0,
-gold:100
-};
-
-let enemyHp=0;
-let questClear=false;
-
-let npc=[
-"村人",
-"鍛冶屋",
-"王様"
-];let party=[
-{
-name:"戦士",
-skill:"強打",
-power:30
-},
-{
-name:"魔法使い",
-skill:"ファイア",
-power:40
-},
-{
-name:"僧侶",
-skill:"回復",
-power:-30
-}
-];
-
-let partyIndex=0;let x=2;
-let y=2;
-
-let map=[
-["🌲","🌲","🏰","🌲","🌲"],
-["🌲","🌱","🌱","🌱","🌲"],
-["🌲","🌱","🎁","🌱","🪨"],
-["🌲","🌱","🌱","🌱","🌲"],
-["🌲","🌲","🌲","🌲","🌲"]
-];let weapon="木の剣";
-let potion=3;
-let friends=[];
-let areas=[
-"🌱草原",
-"🌲森",
-"🪨洞窟",
-"🏰城"
-];
-
-let enemies=[
-"👾スライム",
-"🐺オオカミ",
-"🧟ゾンビ"
-];
-
-
-function move(){
-
-let p=areas[Math.floor(Math.random()*areas.length)];
-
-document.getElementById("place").textContent=p;
-
-
-if(Math.random()<0.7){
-
-let e=enemies[Math.floor(Math.random()*enemies.length)];
-
-enemyHp=player.lv*50;
-
-document.getElementById("enemy").textContent=e;
-
-document.getElementById("ehp").textContent=enemyHp;
-
-log("敵が現れた！");
-
-}else{
-
-document.getElementById("enemy").textContent="安全な場所";
-
-log("何もいない");
-
-}
-
-}
-
-
-function attack(){
-
-if(enemyHp<=0)return;
-
-let d=player.atk+5;
-
-enemyHp-=d;
-
-log("攻撃 "+d+"ダメージ");
-playAttack();document.getElementById("effect").textContent="⚔️💥";
-enemyAttack();
-
-check();
-
-}
-
-
-function magic(){
-playMagic();
-if(enemyHp<=0)return;
-
-enemyHp-=30;
-
-log("🔥魔法攻撃！");
-document.getElementById("effect").textContent="🔥✨";
-enemyAttack();
-
-check();
-
-}
-
-
-function heal(){
-
-player.hp+=30;
-
-if(player.hp>100)
-player.hp=100;
-
-update();
-
-log("回復した");
-
-}
-
-
-function enemyAttack(){
-
-if(enemyHp<=0)return;
-
-let d=10;
-
-player.hp-=d;
-
-update();
-
-}
-
-
-function check(){
-
-if(enemyHp<=0){
-
-player.exp+=30;
-player.gold+=50;
-
-if(player.exp>=100){
-
-player.lv++;
-player.atk+=5;
-player.exp=0;
-
-log("レベルアップ！");
-
-}
-
-update();
-
-}
-
-}
-
-
-function update(){
-
-hp.textContent=player.hp;
-atk.textContent=player.atk;
-lv.textContent=player.lv;
-exp.textContent=player.exp;
-gold.textContent=player.gold;
-
-}
-
-
-function log(t){
-
-document.getElementById("log").textContent=t;
-
-}
-function shop(){
-
-if(player.gold>=100){
-
-player.gold-=100;
-player.atk+=10;
-
-log("鉄の剣を買った！攻撃力アップ");
-
-}else{
-
-log("お金が足りない");
-
-}
-
-update();
-
-}
-
-
-function equip(){
-
-log("装備中："+weapon);
-
-}
-
-
-function item(){
-
-if(potion>0){
-
-potion--;
-player.hp+=50;
-
-if(player.hp>100)
-player.hp=100;
-
-update();
-
-log("回復薬を使った！");
-
-}else{
-
-log("回復薬がない");
-
-}
-
-}
-
-
-function friend(){
-
-friends.push("魔法使い");
-
-player.atk+=5;
-
-update();
-
-log("魔法使いが仲間になった！");
-
-}
-function boss(){
-
-enemyHp=500;
-
-document.getElementById("enemy").textContent="🐲魔王";
-
-document.getElementById("ehp").textContent=enemyHp;
-
-log("魔王が現れた！");
-
-}
-
-
-function save(){
-
-localStorage.setItem(
-"myRPG",
-JSON.stringify(player)
-);
-
-log("セーブしました！");
-
-}
-
-
-function load(){
-
-let data=localStorage.getItem("myRPG");
-
-if(data){
-
-player=JSON.parse(data);
-
-update();
-
-log("ロードしました！");
-
-}else{
-
-log("セーブデータがありません");
-
-}
-
-}
-
-
-function clearGame(){
-
-document.body.innerHTML=
-"<h1>🏆クリア！🏆</h1>"+
-"<h2>魔王を倒した！</h2>";
-
-}function drawMap(){
-
-let text="";
-
-for(let i=0;i<map.length;i++){
-
-for(let j=0;j<map[i].length;j++){
-
-if(i==y && j==x){
-
-text+="🧙";
-
-}else{
-
-text+=map[i][j];
-
-}
-
-}
-
-text+="<br>";
-
-}
-
-document.getElementById("map").innerHTML=text;
-
-}
-
-
-function up(){
-
-if(y>0)y--;
-
-eventMap();
-
-}
-
-
-function down(){
-
-if(y<map.length-1)y++;
-
-eventMap();
-
-}
-
-
-function left(){
-
-if(x>0)x--;
-
-eventMap();
-
-}
-
-
-function right(){
-
-if(x<map[0].length-1)x++;
-
-eventMap();
-
-}
-
-
-function eventMap(){
-
-drawMap();
-
-let place=map[y][x];
-
-
-if(place=="🎁"){
-
-player.gold+=100;
-
-map[y][x]="🌱";
-
-log("宝箱発見！100G");
-
-update();
-
-}
-
-
-if(place=="🪨"){
-
-log("洞窟に入った！");
-
-}
-
-
-if(place=="🏰"){
-
-log("城に到着！");
-
-}
-
-}
-
-
-drawMap();function partyAttack(){
-
-let member=party[partyIndex];
-
-
-if(member.name=="僧侶"){
-
-player.hp+=30;
-
-if(player.hp>100)
-player.hp=100;
-
-log(
-member.name+"の"+member.skill+
-"！HP回復"
-);
-
-update();
-
-}else{
-
-enemyHp-=member.power;
-
-log(
-member.name+"の"+member.skill+
-"！"+member.power+"ダメージ"
-);
-
-document.getElementById("ehp").textContent=enemyHp;
-
-}
-
-partyIndex++;
-
-if(partyIndex>=party.length){
-
-partyIndex=0;
-
-}
-
-}function talk(){
-
-log("村人：魔王を倒して世界を救ってくれ！");
-
-}
-
-
-function quest(){
-
-if(!questClear){
-
-log("クエスト：敵を5体倒そう！");
-
-}else{
-
-log("クエスト達成済み！");
-
-}
-
-}
-
-
-let oldCheck=check;
-
-check=function(){
-
-oldCheck();
-
-if(player.exp>=150){
-
-questClear=true;
-
-log("クエスト達成！報酬100G");
-
-player.gold+=100;
-
-update();
-
-}
-
-}function openShop(){
-
-document.getElementById("shop").style.display="block";
-
-}
-
-
-function closeShop(){
-
-document.getElementById("shop").style.display="none";
-
-}
-
-
-function buySword(){
-
-if(player.gold>=100){
-
-player.gold-=100;
-
-player.atk+=10;
-
-log("鉄の剣を買った！");
-
-update();
-
-}else{
-
-log("お金が足りない");
-
-}
-
-}
-
-
-function openBag(){
-
-document.getElementById("bag").style.display="block";
-
-}
-
-
-function closeBag(){
-
-document.getElementById("bag").style.display="none";
-
-}function playAttack(){
-
-let s=document.getElementById("attackSound");
-
-if(s.src){
-s.play();
-}
-
-}
-
-
-function playMagic(){
-
-let s=document.getElementById("magicSound");
-
-if(s.src){
-s.play();
-}
-
-}</script>
-
+    <div id="msg">画面をタッチしてスタート</div>
+    <canvas id="gameCanvas" width="360" height="480"></canvas>
+    <button id="btn" onclick="resetGame()">もう一度遊ぶ</button>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const msg = document.getElementById("msg");
+        const btn = document.getElementById("btn");
+
+        let ballRadius = 8;
+        let x, y, dx, dy;
+        let paddleHeight = 12;
+        let paddleWidth = 75;
+        let paddleX;
+        let brickRowCount = 5;
+        let brickColumnCount = 5;
+        let brickWidth = 60;
+        let brickHeight = 20;
+        let brickPadding = 5;
+        let brickOffsetTop = 30;
+        let brickOffsetLeft = 20;
+        let bricks = [];
+        let score = 0;
+        let isPlaying = false;
+        let isGameOver = false;
+
+        function initData() {
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dx = 3;
+            dy = -3;
+            paddleX = (canvas.width - paddleWidth) / 2;
+            score = 0;
+            isGameOver = false;
+            bricks = [];
+            for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1 };
+                }
+            }
+        }
+
+        // スマホのタッチ操作イベント
+        window.addEventListener("touchstart", (e) => {
+            if (!isPlaying && !isGameOver) {
+                isPlaying = true;
+                msg.innerText = "スコア: 0";
+                draw();
+            }
+        });
+
+        window.addEventListener("touchmove", (e) => {
+            e.preventDefault();
+            if (!isPlaying) return;
+            let touch = e.touches[0];
+            let rect = canvas.getBoundingClientRect();
+            let relativeX = touch.clientX - rect.left;
+            // キャンバスの表示サイズと内部解像度の比率を計算
+            let scaleX = canvas.width / rect.width;
+            let targetX = relativeX * scaleX - paddleWidth / 2;
+            
+            if (targetX > 0 && targetX < canvas.width - paddleWidth) {
+                paddleX = targetX;
+            }
+        }, { passive: false });
+
+        function collisionDetection() {
+            let activeBricks = 0;
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    let b = bricks[c][r];
+                    if (b.status === 1) {
+                        activeBricks++;
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            score++;
+                            msg.innerText = "スコア: " + score;
+                        }
+                    }
+                }
+            }
+            if (activeBricks === 0 && isPlaying) {
+                msg.innerText = "🎉 クリア成功！おめでとう！";
+                endGame();
+            }
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#FF5722";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight - 10, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = "#4CAF50";
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        function endGame() {
+            isPlaying = false;
+            isGameOver = true;
+            btn.style.display = "block";
+        }
+
+        function draw() {
+            if (!isPlaying) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            collisionDetection();
+
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+            if (y + dy < ballRadius) {
+                dy = -dy;
+            } else if (y + dy > canvas.height - ballRadius - 10 - paddleHeight) {
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dy = -dy;
+                } else if (y + dy > canvas.height - ballRadius) {
+                    msg.innerText = "ゲームオーバー 😢";
+                    endGame();
+                    return;
+                }
+            }
+
+            x += dx;
+            y += dy;
+            requestAnimationFrame(draw);
+        }
+
+        function resetGame() {
+            btn.style.display = "none";
+            msg.innerText = "画面をタッチしてスタート";
+            initData();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+        }
+
+        initData();
+        drawBricks();
+        drawBall();
+        drawPaddle();
+    </script>
 </body>
 </html>
