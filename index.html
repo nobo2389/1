@@ -5,7 +5,16 @@
 <title>強化RPG</title>
 
 <style>
-.card{
+body{
+  max-width:600px;
+  margin:auto;
+  padding:10px;
+}
+
+button{
+  width:45%;
+  font-size:18px;
+}.card{
  background:#eee;
  border-radius:15px;
  padding:10px;
@@ -37,7 +46,14 @@ button{
 </head>
 
 <body>
-<div id="shop" class="card" style="display:none">
+<audio id="bgm" loop>
+</audio>
+
+<audio id="attackSound">
+</audio>
+
+<audio id="magicSound">
+</audio><div id="shop" class="card" style="display:none">
 
 <h2>🏪武器屋</h2>
 
@@ -208,7 +224,7 @@ let d=player.atk+5;
 enemyHp-=d;
 
 log("攻撃 "+d+"ダメージ");
-document.getElementById("effect").textContent="⚔️💥";
+playAttack();document.getElementById("effect").textContent="⚔️💥";
 enemyAttack();
 
 check();
@@ -217,7 +233,7 @@ check();
 
 
 function magic(){
-
+playMagic();
 if(enemyHp<=0)return;
 
 enemyHp-=30;
@@ -637,6 +653,25 @@ document.getElementById("bag").style.display="block";
 function closeBag(){
 
 document.getElementById("bag").style.display="none";
+
+}function playAttack(){
+
+let s=document.getElementById("attackSound");
+
+if(s.src){
+s.play();
+}
+
+}
+
+
+function playMagic(){
+
+let s=document.getElementById("magicSound");
+
+if(s.src){
+s.play();
+}
 
 }</script>
 
