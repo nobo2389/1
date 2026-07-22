@@ -47,7 +47,10 @@ button{
 </p>
 
 <button onclick="move()">🗺️移動</button>
-<button onclick="attack()">⚔️攻撃</button>
+<button onclick="up()">⬆️</button>
+<button onclick="down()">⬇️</button>
+<button onclick="left()">⬅️</button>
+<button onclick="right()">➡️</button><button onclick="attack()">⚔️攻撃</button>
 <button onclick="magic()">🔥魔法</button>
 <button onclick="heal()">💊回復</button>
 <button onclick="shop()">🏪店</button>
@@ -70,7 +73,16 @@ gold:100
 };
 
 let enemyHp=0;
-let weapon="木の剣";
+let x=2;
+let y=2;
+
+let map=[
+["🌲","🌲","🏰","🌲","🌲"],
+["🌲","🌱","🌱","🌱","🌲"],
+["🌲","🌱","🎁","🌱","🪨"],
+["🌲","🌱","🌱","🌱","🌲"],
+["🌲","🌲","🌲","🌲","🌲"]
+];let weapon="木の剣";
 let potion=3;
 let friends=[];
 let areas=[
@@ -329,7 +341,108 @@ document.body.innerHTML=
 "<h1>🏆クリア！🏆</h1>"+
 "<h2>魔王を倒した！</h2>";
 
-}</script>
+}function drawMap(){
+
+let text="";
+
+for(let i=0;i<map.length;i++){
+
+for(let j=0;j<map[i].length;j++){
+
+if(i==y && j==x){
+
+text+="🧙";
+
+}else{
+
+text+=map[i][j];
+
+}
+
+}
+
+text+="<br>";
+
+}
+
+document.getElementById("map").innerHTML=text;
+
+}
+
+
+function up(){
+
+if(y>0)y--;
+
+eventMap();
+
+}
+
+
+function down(){
+
+if(y<map.length-1)y++;
+
+eventMap();
+
+}
+
+
+function left(){
+
+if(x>0)x--;
+
+eventMap();
+
+}
+
+
+function right(){
+
+if(x<map[0].length-1)x++;
+
+eventMap();
+
+}
+
+
+function eventMap(){
+
+drawMap();
+
+let place=map[y][x];
+
+
+if(place=="🎁"){
+
+player.gold+=100;
+
+map[y][x]="🌱";
+
+log("宝箱発見！100G");
+
+update();
+
+}
+
+
+if(place=="🪨"){
+
+log("洞窟に入った！");
+
+}
+
+
+if(place=="🏰"){
+
+log("城に到着！");
+
+}
+
+}
+
+
+drawMap();</script>
 
 </body>
 </html>
