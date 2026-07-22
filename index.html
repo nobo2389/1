@@ -2,65 +2,101 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>敵とステージゲーム</title>
+<title>RPGバトル</title>
+
 <style>
 body{
- text-align:center;
- font-family:sans-serif;
- margin-top:50px;
+  text-align:center;
+  font-family:sans-serif;
+  margin-top:40px;
 }
 
-#enemy{
- font-size:50px;
+.character{
+  font-size:60px;
 }
 
 button{
- font-size:25px;
- padding:15px 30px;
+  font-size:25px;
+  padding:15px 30px;
+}
+
+#log{
+  margin:20px;
+  height:60px;
 }
 </style>
+
 </head>
 
 <body>
 
-<h1>冒険ゲーム</h1>
+<h1>⚔️ RPGバトル ⚔️</h1>
 
 <h2>ステージ <span id="stage">1</span></h2>
 
-<div id="enemy">👾</div>
+<div class="character">🧙</div>
+<p>勇者HP：<span id="playerHP">100</span></p>
 
-<p>敵HP：<span id="hp">10</span></p>
-<p>スコア：<span id="score">0</span></p>
+<div class="character">👾</div>
+<p>敵HP：<span id="enemyHP">30</span></p>
 
-<button onclick="attack()">攻撃！</button>
+<button onclick="attack()">攻撃する</button>
+
+<p id="log">敵が現れた！</p>
 
 <script>
 
 let stage = 1;
-let hp = 10;
-let score = 0;
+let playerHP = 100;
+let enemyHP = 30;
+
 
 function attack(){
 
- hp--;
+ let damage = Math.floor(Math.random()*15)+5;
+ enemyHP -= damage;
 
- document.getElementById("hp").textContent = hp;
+ document.getElementById("log").textContent =
+ "勇者の攻撃！敵に " + damage + " ダメージ！";
 
- if(hp <= 0){
 
-   score += 10;
-
-   document.getElementById("score").textContent = score;
+ if(enemyHP <= 0){
 
    stage++;
 
    document.getElementById("stage").textContent = stage;
 
-   hp = stage * 10;
+   enemyHP = stage * 30;
 
-   document.getElementById("hp").textContent = hp;
+   document.getElementById("enemyHP").textContent = enemyHP;
 
-   alert("次のステージ！");
+   document.getElementById("log").textContent =
+   "敵を倒した！ステージ" + stage + "へ！";
+
+   return;
+ }
+
+
+ // 敵の反撃
+ let enemyDamage = Math.floor(Math.random()*10)+5;
+
+ playerHP -= enemyDamage;
+
+
+ document.getElementById("playerHP").textContent = playerHP;
+
+
+ document.getElementById("enemyHP").textContent = enemyHP;
+
+
+ document.getElementById("log").textContent +=
+ " 敵の反撃！" + enemyDamage + "ダメージ！";
+
+
+ if(playerHP <= 0){
+
+   document.getElementById("log").textContent =
+   "ゲームオーバー…";
 
  }
 
