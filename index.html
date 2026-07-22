@@ -1,252 +1,65 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>超爽快！ネオン・ブロック崩し</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #0a0a16; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; color: #fff; }
-        #hud { width: 100%; max-width: 360px; display: flex; justify-content: space-between; padding: 10px 15px; font-size: 16px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 0 10px #00ffff; }
-        canvas { background: #111125; border: 2px solid #00ffff; box-shadow: 0 0 25px rgba(0, 255, 255, 0.4); max-width: 100vw; max-height: 75vh; border-radius: 8px; }
-        #overlay { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 10, 22, 0.85); width: 100%; height: 100%; top: 0; left: 0; z-index: 10; transition: all 0.3s; }
-        #title { font-size: 28px; margin-bottom: 20px; font-weight: 900; background: linear-gradient(45deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 20px rgba(0,255,255,0.5); text-align: center; }
-        #btn { padding: 15px 35px; font-size: 18px; font-weight: bold; background: linear-gradient(135deg, #00ffff, #0088cc); color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 0 15px #00ffff; }
-        #btn:active { transform: scale(0.95); }
-    </style>
-</head>
-<body>
-    <div id="hud">
-        <div id="score">SCORE: 0</div>
-        <div id="lives">LIVES: ❤️❤️❤️</div>
-    </div>
-    <canvas id="gameCanvas" width="360" height="520"></canvas>
-    
-    <div id="overlay">
-        <div id="title">NEON BREAKOUT</div>
-        <button id="btn" onclick="startGame()">START</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const overlay = document.getElementById("overlay");
-        const titleText = document.getElementById("title");
-        const scoreDiv = document.getElementById("score");
-        const livesDiv = document.getElementById("lives");
-
-        let isPlaying = false;
-        let score = 0;
-        let lives = 3;
-
-        // パドル設定
-        let paddleHeight = 14;
-        let basePaddleWidth = 80;
-        let paddleWidth = basePaddleWidth;
-        let paddleX = (canvas.width - paddleWidth) / 2;
-        let paddleColor = "#00ffff";
-        let paddleTimer = 0;
-
-        // ボール配列
-        let balls = [];
-        const ballRadius = 7;
-
-        // ブロック設定
-        const brickRows = 6;
-        const brickCols = 6;
-        const brickWidth = 50;
-        const brickHeight = 18;
-        const brickPadding = 6;
-        const brickOffsetTop = 40;
-        const brickOffsetLeft = 15;
-        let bricks = [];
-
-        // パーティクル配列
-        let particles = [];
-
-        // アイテム配列
-        let items = [];
-
-        // ブロックの色
-        const colors = ["#ff0055", "#ff5500", "#ffcc00", "#33ff00", "#00ffff", "#aa00ff"];
-
-        function initGame() {
-            score = 0;
-            lives = 3;
-            balls = [];
-            items = [];
-            particles = [];
-            paddleWidth = basePaddleWidth;
-            paddleColor = "#00ffff";
-            
-            // ブロックの初期化
-            for(let c=0; c<brickCols; c++) {
-                bricks[c] = [];
-                for(let r=0; r<brickRows; r++) {
-                    let itemType = 0;
-                    if(Math.random() < 0.25) {
-                        itemType = Math.random() < 0.5 ? 1 : 2; // 1:ワイド, 2:マルチ
-                    }
-                    bricks[c][r] = { x: 0, y: 0, status: 1, color: colors[r], item: itemType };
-                }
-            }
-            updateHUD();
-            spawnBall(canvas.width/2, canvas.height - 40, 3, -4);
-        }
-
-        function spawnBall(x, y, dx, dy) {
-            balls.push({ x: x, y: y, dx: dx, dy: dy });
-        }
-
-        function createParticles(x, y, color) {
-            for(let i=0; i<8; i++) {
-                particles.push({
-                    x: x, y: y,
-                    dx: (Math.random() - 0.5) * 6,
-                    dy: (Math.random() - 0.5) * 6,
-                    radius: Math.random() * 3 + 1,
-                    color: color,
-                    alpha: 1
-                });
-            }
-        }
-
-        function spawnItem(x, y, type) {
-            items.push({ x: x, y: y, type: type, dy: 2 });
-        }
-
-        // スマホタッチ操作
-        window.addEventListener("touchmove", (e) => {
-            e.preventDefault();
-            let touch = e.touches[0];
-            let rect = canvas.getBoundingClientRect();
-            let relativeX = touch.clientX - rect.left;
-            let scaleX = canvas.width / rect.width;
-            let targetX = relativeX * scaleX - paddleWidth / 2;
-            
-            if (targetX >= 0 && targetX <= canvas.width - paddleWidth) {
-                paddleX = targetX;
-            }
-        }, { passive: false });
-
-        function startGame() {
-            overlay.style.display = "none";
-            initGame();
-            if(!isPlaying) {
-                isPlaying = true;
-                draw();
-            }
-        }
-
-        function gameOver(win) {
-            isPlaying = false;
-            overlay.style.display = "flex";
-            if(win) {
-                titleText.innerHTML = "🏆 STAGE CLEAR!<br><span style='font-size:16px'>あなたは天才です！</span>";
-            } else {
-                titleText.innerHTML = "💥 GAME OVER<br><span style='font-size:16px'>次こそクリアだ！</span>";
-            }
-            document.getElementById("btn").innerText = "RETRY";
-        }
-
-        function updateHUD() {
-            scoreDiv.innerText = "SCORE: " + score;
-            livesDiv.innerText = "LIVES: " + "❤️".repeat(lives);
-        }
-
-        function draw() {
-            if (!isPlaying) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. パドルのパワーアップタイマー処理
-            if(paddleTimer > 0) {
-                paddleTimer--;
-                if(paddleTimer === 0) {
-                    paddleWidth = basePaddleWidth;
-                    paddleColor = "#00ffff";
-                }
-            }
-
-            // 2. ブロックの描画と衝突
-            let activeBricks = 0;
-            for(let c=0; c<brickCols; c++) {
-                for(let r=0; r<brickRows; r++) {
-                    let b = bricks[c][r];
-                    if(b.status === 1) {
-                        activeBricks++;
-                        let bx = c * (brickWidth + brickPadding) + brickOffsetLeft;
-                        let by = r * (brickHeight + brickPadding) + brickOffsetTop;
-                        b.x = bx; b.y = by;
-
-                        ctx.shadowBlur = 10;
-                        ctx.shadowColor = b.color;
-                        ctx.fillStyle = b.color;
-                        ctx.beginPath();
-                        if (ctx.roundRect) {
-                            ctx.roundRect(bx, by, brickWidth, brickHeight, 3);
-                        } else {
-                            ctx.rect(bx, by, brickWidth, brickHeight);
-                        }
-                        ctx.fill();
-                        
-                        if(b.item > 0) {
-                            ctx.fillStyle = "#fff";
-                            ctx.font = "10px sans-serif";
-                            ctx.fillText("?", bx + brickWidth/2 - 3, by + brickHeight/2 + 4);
-                        }
-                    }
-                }
-            }
-            ctx.shadowBlur = 0;
-
-            if(activeBricks === 0) { gameOver(true); return; }
-
-            // 3. パドルの描画
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = paddleColor;
-            ctx.fillStyle = paddleColor;
-            ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight, 5);
-            } else {
-                ctx.rect(paddleX, canvas.height - paddleHeight - 15, paddleWidth, paddleHeight);
-            }
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            // 4. ボールの処理
-            for(let i = balls.length - 1; i >= 0; i--) {
-                let ball = balls[i];
-                
-                if(ball.x + ball.dx > canvas.width - ballRadius || ball.x + ball.dx < ballRadius) ball.dx = -ball.dx;
-                if(ball.y + ball.dy < ballRadius) ball.dy = -ball.dy;
-
-                let pTop = canvas.height - paddleHeight - 15;
-                if(ball.y + ball.dy >= pTop && ball.y <= pTop + paddleHeight) {
-                    if(ball.x > paddleX && ball.x < paddleX + paddleWidth) {
-                        let hitPos = (ball.x - paddleX) / paddleWidth;
-                        ball.dx = 8 * (hitPos - 0.5);
-                        ball.dy = -Math.abs(ball.dy);
-                    }
-                }
-
-                for(let c=0; c<brickCols; c++) {
-                    for(let r=0; r<brickRows; r++) {
-                        let b = bricks[c][r];
-                        if(b.status === 1) {
-                            if(ball.x > b.x && ball.x < b.x + brickWidth && ball.y > b.y && ball.y < b.y + brickHeight) {
-                                ball.dy = -ball.dy;
-                                b.status = 0;
-                                score += 10;
-                                updateHUD();
-                                createParticles(ball.x, ball.y, b.color);
-                                
-                                if(b.item > 0) spawnItem(b.x + brickWidth/2, b.y + brickHeight, b.item);
-                            }
-                        }
-                    }
-                }
-
-                ball.x += ball.dx;
-                ball.y += ball.dy;
-
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>NEON</title>
+<style>
+* { margin:0; padding:0; }
+body { background:#0a0a16; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; overflow:hidden; color:#fff; font-family:sans-serif; }
+#hud { width:360px; display:flex; justify-content:space-between; padding:5px; font-weight:bold; color:#0ff; }
+canvas { background:#111125; border:2px solid #0ff; max-width:100vw; max-height:75vh; }
+#ov { position:absolute; background:rgba(10,10,22,0.9); width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; }
+button { padding:12px 30px; font-size:18px; background:#0ff; border:none; border-radius:20px; font-weight:bold; }
+</style></head><body>
+<div id="hud"><div id="sc">SCORE: 0</div><div id="lv">LIVES: ❤️❤️❤️</div></div>
+<canvas id="cv" width="360" height="520"></canvas>
+<div id="ov"><h1 id="ti" style="margin-bottom:20px;color:#0ff">NEON BREAK</h1><button onclick="st()">START</button></div>
+<script>
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d"),ov=document.getElementById("ov"),ti=document.getElementById("ti"),sc=document.getElementById("sc"),lv=document.getElementById("lv");
+let isP=false,score=0,lives=3,pw=80,ph=14,px=140,pt=0,pc="#0ff",balls=[],bricks=[],items=[],ptcs=[];
+const clrs=["#f05","#f50","#fc0","#3f0","#0ff","#a0f"];
+function init(){
+  score=0;lives=3;balls=[];items=[];ptcs=[];pw=80;pc="#0ff";
+  for(let c=0;c<6;c++){ bricks[c]=[]; for(let r=0;r<6;r++) bricks[c][r]={status:1,clr:clrs[r],it:Math.random()<0.25?(Math.random()<0.5?1:2):0}; }
+  up();sp(180,450,3,-4);
+}
+function sp(x,y,dx,dy){ balls.push({x,y,dx,dy}); }
+window.addEventListener("touchmove",(e)=>{
+  e.preventDefault(); let r=cv.getBoundingClientRect(),t=e.touches[0].clientX-r.left;
+  px=t*(360/r.width)-pw/2; px=Math.max(0,Math.min(360-pw,px));
+},{passive:false});
+function st(){ ov.style.display="none"; init(); if(!isP){isP=true; dr();} }
+function up(){ sc.innerText="SCORE: "+score; lv.innerText="LIVES: "+"❤️".repeat(lives); }
+function dr(){
+  if(!isP)return; ctx.clearRect(0,0,360,520); if(pt>0&&--pt===0){pw=80;pc="#0ff";}
+  let bk=0;
+  for(let c=0;c<6;c++)for(let r=0;r<6;r++){
+    let b=bricks[c][r],bx=c*56+15,by=r*24+40; if(!b.status)continue; bk++; b.x=bx;b.y=by;
+    ctx.fillStyle=b.clr; ctx.fillRect(bx,by,50,18); if(b.it) {ctx.fillStyle="#fff";ctx.fillText("?",bx+22,by+12);}
+  }
+  if(!bk){ isP=false; ov.style.display="flex"; ti.innerHTML="🏆 CLEAR!"; return; }
+  ctx.fillStyle=pc; ctx.fillRect(px,491,pw,ph);
+  for(let i=balls.length-1;i>=0;i--){
+    let b=balls[i]; if(b.x+b.dx>353||b.x+b.dx<7)b.dx=-b.dx; if(b.y+b.dy<7)b.dy=-b.dy;
+    if(b.y+b.dy>=491&&b.y<=505&&b.x>px&&b.x<px+pw){ b.dx=8*((b.x-px)/pw-0.5); b.dy=-Math.abs(b.dy); }
+    for(let c=0;c<6;c++)for(let r=0;r<6;r++){
+      let bk=bricks[c][r]; if(bk.status&&b.x>bk.x&&b.x<bk.x+50&&b.y>bk.y&&b.y<bk.y+18){
+        b.dy=-b.dy; bk.status=0; score+=10; up();
+        for(let k=0;k<6;k++)ptcs.push({x:b.x,y:b.y,dx:(Math.random()-0.5)*4,dy:(Math.random()-0.5)*4,a:1,c:bk.clr});
+        if(bk.it)items.push({x:bk.x+25,y:bk.y+9,t:bk.it});
+      }
+    }
+    b.x+=b.dx; b.y+=b.dy; ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(b.x,b.y,7,0,Math.PI*2); ctx.fill();
+    if(b.y>520)balls.splice(i,1);
+  }
+  if(!balls.length){ if(--lives===0){isP=false; ov.style.display="flex"; ti.innerHTML="💥 GAME OVER";}else{sp(180,450,2,-4);up();} }
+  for(let i=items.length-1;i>=0;i--){
+    let j=items[i]; j.y+=2; ctx.fillStyle=j.t===1?"#0ff":"#f0f"; ctx.font="14px sans-serif"; ctx.fillText(j.t===1?"↔️":"🔮",j.x,j.y);
+    if(j.y>=480&&j.y<=505&&j.x>px&&j.x<px+pw){ if(j.t===1){pw=130;pc="#fc0";pt=400;}else{let bl=balls.length;for(let k=0;k<Math.min(bl,2);k++)sp(balls[k].x,balls[k].y,(Math.random()-0.5)*6,-4);} items.splice(i,1); continue; }
+    if(j.y>520)items.splice(i,1);
+  }
+  for(let i=ptcs.length-1;i>=0;i--){
+    let p=ptcs[i]; p.x+=p.dx; p.y+=p.dy; p.a-=0.03; if(p.a<=0){ptcs.splice(i,1);}else{ctx.save();ctx.globalAlpha=p.a;ctx.fillStyle=p.c;ctx.fillRect(p.x,p.y,3,3);ctx.restore();}
+  }
+  requestAnimationFrame(dr);
+}
+</script></body></html>
