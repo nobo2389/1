@@ -47,7 +47,9 @@ button{
 <button onclick="equip()">🗡️装備</button>
 <button onclick="item()">🎒アイテム</button>
 <button onclick="friend()">👥仲間</button>
-<p id="log"></p>
+<button onclick="boss()">🐉ボス戦</button>
+<button onclick="save()">💾セーブ</button>
+<button onclick="load()">📂ロード</button><p id="log"></p>
 
 
 <script>
@@ -276,7 +278,50 @@ log("魔法使いが仲間になった！");
 update();
 
 }
-</script>
+function boss(){
+
+enemyHp=300;
+
+document.getElementById("enemy").textContent="🐲魔王";
+
+document.getElementById("enemyHp").textContent=enemyHp;
+
+log("魔王が現れた！");
+
+}
+
+
+function save(){
+
+localStorage.setItem(
+"rpgSave",
+JSON.stringify(player)
+);
+
+log("セーブしました");
+
+}
+
+
+function load(){
+
+let data=localStorage.getItem("rpgSave");
+
+if(data){
+
+player=JSON.parse(data);
+
+update();
+
+log("ロードしました");
+
+}else{
+
+log("セーブデータなし");
+
+}
+
+}</script>
 
 </body>
 </html>
