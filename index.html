@@ -50,7 +50,10 @@ button{
 <button onclick="attack()">⚔️攻撃</button>
 <button onclick="magic()">🔥魔法</button>
 <button onclick="heal()">💊回復</button>
-
+<button onclick="shop()">🏪店</button>
+<button onclick="equip()">🗡️装備</button>
+<button onclick="item()">🎒アイテム</button>
+<button onclick="friend()">👥仲間</button>
 <p id="log"></p>
 
 
@@ -65,7 +68,9 @@ gold:100
 };
 
 let enemyHp=0;
-
+let weapon="木の剣";
+let potion=3;
+let friends=[];
 let areas=[
 "🌱草原",
 "🌲森",
@@ -209,7 +214,67 @@ function log(t){
 document.getElementById("log").textContent=t;
 
 }
+function shop(){
 
+if(player.gold>=100){
+
+player.gold-=100;
+player.atk+=10;
+
+log("鉄の剣を買った！攻撃力アップ");
+
+}else{
+
+log("お金が足りない");
+
+}
+
+update();
+
+}
+
+
+function equip(){
+
+log("装備中："+weapon);
+
+}
+
+
+function item(){
+
+if(potion>0){
+
+potion--;
+player.hp+=50;
+
+if(player.hp>100)
+player.hp=100;
+
+update();
+
+log("回復薬を使った！");
+
+}else{
+
+log("回復薬がない");
+
+}
+
+}
+
+
+function friend(){
+
+friends.push("魔法使い");
+
+player.atk+=5;
+
+update();
+
+log("魔法使いが仲間になった！");
+
+}
 </script>
 
 </body>
