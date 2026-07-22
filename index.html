@@ -5,7 +5,20 @@
 <title>強化RPG</title>
 
 <style>
-body{
+.card{
+ background:#eee;
+ border-radius:15px;
+ padding:10px;
+ margin:10px;
+}
+
+.character{
+ font-size:70px;
+}
+
+.effect{
+ font-size:40px;
+}body{
  text-align:center;
  font-family:sans-serif;
 }
@@ -39,7 +52,17 @@ button{
 💰お金：<span id="gold">0</span>
 </p>
 
-<div id="enemy">敵なし</div>
+<div <div class="card">
+
+<div class="character" id="hero">🧙</div>
+
+<div class="effect" id="effect"></div>
+
+<div class="character" id="enemy">
+👾
+</div>
+
+</div>
 
 <p>
 敵HP：
@@ -163,7 +186,7 @@ let d=player.atk+5;
 enemyHp-=d;
 
 log("攻撃 "+d+"ダメージ");
-
+document.getElementById("effect").textContent="⚔️💥";
 enemyAttack();
 
 check();
@@ -178,7 +201,7 @@ if(enemyHp<=0)return;
 enemyHp-=30;
 
 log("🔥魔法攻撃！");
-
+document.getElementById("effect").textContent="🔥✨";
 enemyAttack();
 
 check();
