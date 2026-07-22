@@ -2,223 +2,176 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>RPGゲーム</title>
-
+<title>ミニRPG</title>
 <style>
-body{
- text-align:center;
- font-family:sans-serif;
- margin-top:30px;
-}
-
-button{
- font-size:18px;
- padding:10px 20px;
- margin:5px;
-}
-
-.big{
- font-size:50px;
-}
+body{text-align:center;font-family:sans-serif}
+button{font-size:18px;margin:5px;padding:10px}
+.box{font-size:50px}
 </style>
 </head>
 
 <body>
 
-<h1>⚔️ RPG冒険 ⚔️</h1>
+<h1>⚔️ ミニRPG ⚔️</h1>
 
 <h2>ステージ <span id="stage">1</span></h2>
 
-<div class="big" id="enemy">👾</div>
+<div class="box" id="enemy">👾</div>
 
 <p>勇者HP：<span id="hp">100</span></p>
 <p>攻撃力：<span id="atk">10</span></p>
 <p>レベル：<span id="lv">1</span></p>
 <p>経験値：<span id="exp">0</span></p>
 <p>お金：<span id="gold">0</span>G</p>
-
-<p>敵HP：<span id="enemyHP">50</span></p>
+<p>敵HP：<span id="ehp">50</span></p>
 
 <button onclick="attack()">⚔️攻撃</button>
-<button onclick="skill()">🔥必殺技</button>
+<button onclick="magic()">🔥魔法</button>
 <button onclick="heal()">💊回復</button>
-<button onclick="upgrade()">🗡️武器強化</button>
+<button onclick="save()">💾保存</button>
 
-<p id="log">敵が現れた！</p>
-
+<p id="log"></p>
 
 <script>
 
-let stage = 1;
-let hp = 100;
-let atk = 10;
-let lv = 1;
-let exp = 0;
-let gold = 0;
+let p={
+hp:100,
+atk:10,
+lv:1,
+exp:0,
+gold:0,
+stage:1
+};
 
-let enemyHP = 50;
+let enemyHP=50;
 
-let enemies = ["👾","🐺","🧟","🐉"];
+let monsters=["👾","🐺","🧟","🐉"];
 
 
-function newEnemy(){
+function enemy(){
+document.getElementById("enemy").textContent=
+monsters[Math.floor(Math.random()*monsters.length)];
 
- if(stage % 5 == 0){
-   document.getElementById("enemy").textContent="🐲";
-   enemyHP = stage * 80;
- }else{
-   let e=enemies[Math.floor(Math.random()*enemies.length)];
-   document.getElementById("enemy").textContent=e;
-   enemyHP = stage * 50;
- }
-
- document.getElementById("enemyHP").textContent=enemyHP;
-
+enemyHP=p.stage*50;
+document.getElementById("ehp").textContent=enemyHP;
 }
 
 
 function attack(){
 
-let damage = Math.floor(Math.random()*atk)+atk;
+let d=p.atk+Math.floor(Math.random()*10);
+enemyHP-=d;
 
-enemyHP -= damage;
+log("攻撃 "+d+"ダメージ");
 
-battleLog("攻撃！"+damage+"ダメージ");
+turn();
 
-
-enemyTurn();
-
-checkEnemy();
+check();
 
 }
 
 
-function skill(){
+function magic(){
 
-let damage = atk*3;
+let d=30;
 
-enemyHP -= damage;
+enemyHP-=d;
 
-battleLog("🔥必殺技！"+damage+"ダメージ");
+log("🔥魔法 "+d+"ダメージ");
 
-enemyTurn();
+turn();
 
-checkEnemy();
+check();
 
 }
 
 
 function heal(){
 
-hp += 30;
+p.hp+=30;
 
-if(hp>100) hp=100;
+if(p.hp>100)p.hp=100;
 
-document.getElementById("hp").textContent=hp;
+update();
 
-battleLog("💊HPを回復した");
+log("HP回復");
 
-enemyTurn();
+turn();
 
 }
 
 
-function enemyTurn(){
+function turn(){
 
 if(enemyHP<=0)return;
 
-let damage=Math.floor(Math.random()*15)+5;
+let d=Math.floor(Math.random()*15)+5;
 
-hp-=damage;
+p.hp-=d;
 
-document.getElementById("hp").textContent=hp;
-
-battleLog(
-document.getElementById("log").textContent+
-" 敵の攻撃 "+damage+"ダメージ"
-);
-
-
-if(hp<=0){
-
-document.getElementById("log").textContent=
-"ゲームオーバー";
-
-}
+update();
 
 }
 
 
-function checkEnemy(){
-
-document.getElementById("enemyHP").textContent=enemyHP;
-
+function check(){
 
 if(enemyHP<=0){
 
-gold+=50;
-exp+=30;
+p.exp+=30;
+p.gold+=50;
 
-document.getElementById("gold").textContent=gold;
-document.getElementById("exp").textContent=exp;
+if(p.exp>=100){
 
-
-battleLog("敵を倒した！");
-
-
-if(exp>=lv*100){
-
-lv++;
-atk+=5;
-exp=0;
-
-document.getElementById("lv").textContent=lv;
-document.getElementById("atk").textContent=atk;
-
-battleLog("レベルアップ！");
+p.lv++;
+p.atk+=5;
+p.exp=0;
 
 }
 
+p.stage++;
 
-stage++;
+enemy();
 
-document.getElementById("stage").textContent=stage;
+update();
 
-newEnemy();
+log("敵を倒した！");
 
 }
 
 }
 
 
-function upgrade(){
+function save(){
 
-if(gold>=100){
+localStorage.rpg=JSON.stringify(p);
 
-gold-=100;
-atk+=10;
-
-document.getElementById("gold").textContent=gold;
-document.getElementById("atk").textContent=atk;
-
-battleLog("武器を強化した！");
-
-}else{
-
-battleLog("お金が足りない");
-
-}
+log("保存しました");
 
 }
 
 
-function battleLog(t){
+function update(){
+
+hp.textContent=p.hp;
+atk.textContent=p.atk;
+lv.textContent=p.lv;
+exp.textContent=p.exp;
+gold.textContent=p.gold;
+stage.textContent=p.stage;
+ehp.textContent=enemyHP;
+
+}
+
+
+function log(t){
 
 document.getElementById("log").textContent=t;
 
 }
 
-newEnemy();
+
+enemy();
 
 </script>
 
