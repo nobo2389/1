@@ -2,54 +2,56 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>本格RPG</title>
+<title>強化RPG</title>
+
 <style>
 body{
  text-align:center;
  font-family:sans-serif;
 }
+
 button{
  font-size:18px;
+ padding:10px;
  margin:5px;
- padding:10px 20px;
 }
-.box{
- font-size:50px;
+
+#map{
+ font-size:40px;
 }
+
 </style>
 </head>
 
 <body>
 
-<h1>⚔️ 勇者の冒険 ⚔️</h1>
+<h1>⚔️ 強化RPG ⚔️</h1>
 
-<h2 id="area">🌱草原</h2>
+<h2 id="place">🌱草原</h2>
 
-<div class="box" id="enemy">敵なし</div>
+<div id="map">🌲🌱🌲</div>
 
 <p>
 ❤️ HP：<span id="hp">100</span><br>
 ⚔️ 攻撃：<span id="atk">10</span><br>
-⭐ レベル：<span id="lv">1</span><br>
+⭐ Lv：<span id="lv">1</span><br>
 経験値：<span id="exp">0</span><br>
-💰 お金：<span id="gold">0</span>G
+💰お金：<span id="gold">0</span>
 </p>
+
+<div id="enemy">敵なし</div>
 
 <p>
 敵HP：
-<span id="enemyHp">0</span>
+<span id="ehp">0</span>
 </p>
 
 <button onclick="move()">🗺️移動</button>
 <button onclick="attack()">⚔️攻撃</button>
 <button onclick="magic()">🔥魔法</button>
 <button onclick="heal()">💊回復</button>
-<button onclick="equip()">🗡️装備</button>
-<button onclick="item()">🎒アイテム</button>
-<button onclick="friend()">👥仲間</button>
-<button onclick="boss()">🐉ボス戦</button>
-<button onclick="save()">💾セーブ</button>
-<button onclick="load()">📂ロード</button><p id="log"></p>
+
+<p id="log"></p>
 
 
 <script>
@@ -59,14 +61,11 @@ hp:100,
 atk:10,
 lv:1,
 exp:0,
-gold:0
+gold:100
 };
 
 let enemyHp=0;
-let weapon="木の剣";
-let armor="布の服";
-let potion=3;
-let friends=["戦士"];
+
 let areas=[
 "🌱草原",
 "🌲森",
@@ -74,42 +73,37 @@ let areas=[
 "🏰城"
 ];
 
-let monsters=[
+let enemies=[
 "👾スライム",
 "🐺オオカミ",
-"🧟ゾンビ",
-"🐉ドラゴン"
+"🧟ゾンビ"
 ];
 
 
 function move(){
 
-let area=
-areas[Math.floor(Math.random()*areas.length)];
+let p=areas[Math.floor(Math.random()*areas.length)];
 
-document.getElementById("area").textContent=area;
+document.getElementById("place").textContent=p;
 
 
-if(Math.random()<0.8){
+if(Math.random()<0.7){
 
-let enemy=
-monsters[Math.floor(Math.random()*monsters.length)];
+let e=enemies[Math.floor(Math.random()*enemies.length)];
 
 enemyHp=player.lv*50;
 
-document.getElementById("enemy").textContent=enemy;
+document.getElementById("enemy").textContent=e;
 
-document.getElementById("enemyHp").textContent=enemyHp;
+document.getElementById("ehp").textContent=enemyHp;
 
 log("敵が現れた！");
 
 }else{
 
-document.getElementById("enemy").textContent="敵なし";
+document.getElementById("enemy").textContent="安全な場所";
 
-enemyHp=0;
-
-log("安全な場所だ");
+log("何もいない");
 
 }
 
@@ -120,14 +114,13 @@ function attack(){
 
 if(enemyHp<=0)return;
 
-let damage=
-player.atk+Math.floor(Math.random()*10);
+let d=player.atk+5;
 
-enemyHp-=damage;
+enemyHp-=d;
 
-log("攻撃！"+damage+"ダメージ");
+log("攻撃 "+d+"ダメージ");
 
-enemyTurn();
+enemyAttack();
 
 check();
 
@@ -140,9 +133,9 @@ if(enemyHp<=0)return;
 
 enemyHp-=30;
 
-log("🔥魔法攻撃！30ダメージ");
+log("🔥魔法攻撃！");
 
-enemyTurn();
+enemyAttack();
 
 check();
 
@@ -158,19 +151,18 @@ player.hp=100;
 
 update();
 
-log("HPを回復した");
+log("回復した");
 
 }
 
 
-function enemyTurn(){
+function enemyAttack(){
 
 if(enemyHp<=0)return;
 
-let damage=
-Math.floor(Math.random()*15)+5;
+let d=10;
 
-player.hp-=damage;
+player.hp-=d;
 
 update();
 
@@ -184,7 +176,6 @@ if(enemyHp<=0){
 player.exp+=30;
 player.gold+=50;
 
-
 if(player.exp>=100){
 
 player.lv++;
@@ -194,11 +185,6 @@ player.exp=0;
 log("レベルアップ！");
 
 }
-
-
-document.getElementById("enemy").textContent="敵なし";
-
-document.getElementById("enemyHp").textContent=0;
 
 update();
 
@@ -223,105 +209,8 @@ function log(t){
 document.getElementById("log").textContent=t;
 
 }
-function equip(){
 
-if(player.gold>=100){
-
-player.gold-=100;
-player.atk+=10;
-weapon="鉄の剣";
-
-log("鉄の剣を装備！攻撃力アップ");
-
-}else{
-
-log("お金が足りない");
-
-}
-
-update();
-
-}
-
-
-function item(){
-
-if(potion>0){
-
-potion--;
-player.hp+=50;
-
-if(player.hp>100)
-player.hp=100;
-
-log("回復薬を使った！");
-
-update();
-
-}else{
-
-log("回復薬がない");
-
-}
-
-}
-
-
-function friend(){
-
-friends.push("魔法使い");
-
-player.atk+=5;
-
-log("魔法使いが仲間になった！");
-
-update();
-
-}
-function boss(){
-
-enemyHp=300;
-
-document.getElementById("enemy").textContent="🐲魔王";
-
-document.getElementById("enemyHp").textContent=enemyHp;
-
-log("魔王が現れた！");
-
-}
-
-
-function save(){
-
-localStorage.setItem(
-"rpgSave",
-JSON.stringify(player)
-);
-
-log("セーブしました");
-
-}
-
-
-function load(){
-
-let data=localStorage.getItem("rpgSave");
-
-if(data){
-
-player=JSON.parse(data);
-
-update();
-
-log("ロードしました");
-
-}else{
-
-log("セーブデータなし");
-
-}
-
-}</script>
+</script>
 
 </body>
 </html>
