@@ -61,7 +61,8 @@ button{
 <button onclick="save()">💾セーブ</button>
 <button onclick="load()">📂ロード</button><p id="log"></p>
 <button onclick="partyAttack()">👥仲間攻撃</button>
-
+<button onclick="talk()">💬話す</button>
+<button onclick="quest()">📜クエスト</button>
 <script>
 
 let player={
@@ -73,7 +74,13 @@ gold:100
 };
 
 let enemyHp=0;
-let party=[
+let questClear=false;
+
+let npc=[
+"村人",
+"鍛冶屋",
+"王様"
+];let party=[
 {
 name:"戦士",
 skill:"強打",
@@ -497,6 +504,46 @@ partyIndex++;
 if(partyIndex>=party.length){
 
 partyIndex=0;
+
+}
+
+}function talk(){
+
+log("村人：魔王を倒して世界を救ってくれ！");
+
+}
+
+
+function quest(){
+
+if(!questClear){
+
+log("クエスト：敵を5体倒そう！");
+
+}else{
+
+log("クエスト達成済み！");
+
+}
+
+}
+
+
+let oldCheck=check;
+
+check=function(){
+
+oldCheck();
+
+if(player.exp>=150){
+
+questClear=true;
+
+log("クエスト達成！報酬100G");
+
+player.gold+=100;
+
+update();
 
 }
 
