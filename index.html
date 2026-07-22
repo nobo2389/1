@@ -2,109 +2,57 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>冒険RPG</title>
+<title>本格RPG</title>
 <style>
 body{
  text-align:center;
  font-family:sans-serif;
 }
 button{
- font-size:20px;
+ font-size:18px;
  margin:5px;
  padding:10px 20px;
 }
-#map{
- font-size:40px;
+.box{
+ font-size:50px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🗺️ 冒険RPG</h1>
+<h1>⚔️ 勇者の冒険 ⚔️</h1>
 
-<h2 id="place">🌱草原</h2>
+<h2 id="area">🌱草原</h2>
 
-<div id="map">🌲🌲🌱🌲🌲</div>
+<div class="box" id="enemy">敵なし</div>
 
 <p>
-HP：<span id="hp">100</span><br>
-攻撃力：<span id="atk">10</span><br>
-レベル：<span id="lv">1</span><br>
+❤️ HP：<span id="hp">100</span><br>
+⚔️ 攻撃：<span id="atk">10</span><br>
+⭐ レベル：<span id="lv">1</span><br>
 経験値：<span id="exp">0</span><br>
-お金：<span id="gold">0</span>G
+💰 お金：<span id="gold">0</span>G
 </p>
 
-<div id="enemy">
-敵はいない
-</div>
+<p>
+敵HP：
+<span id="enemyHp">0</span>
+</p>
 
-<p>敵HP：<span id="ehp">0</span></p>
-
-<button onclick="move()">🚶進む</button>
+<button onclick="move()">🗺️移動</button>
 <button onclick="attack()">⚔️攻撃</button>
 <button onclick="magic()">🔥魔法</button>
 <button onclick="heal()">💊回復</button>
-
+<button onclick="equip()">🗡️装備</button>
+<button onclick="item()">🎒アイテム</button>
+<button onclick="friend()">👥仲間</button>
 <p id="log"></p>
 
-<scriptfunction equip(){
 
-if(player.gold>=100){
+<script>
 
-player.gold-=100;
-player.atk+=10;
-
-weapon="鉄の剣";
-
-document.getElementById("weapon").textContent=weapon;
-
-update();
-
-log("鉄の剣を装備した！");
-
-}else{
-
-log("お金が足りない");
-
-}
-
-}
-
-
-function useItem(){
-
-if(items>0){
-
-items--;
-
-player.hp+=50;
-
-if(player.hp>100){
-player.hp=100;
-}
-
-update();
-
-log("回復薬を使った！");
-
-}else{
-
-log("回復薬がない");
-
-}
-
-}>
-
-let player={let weapon = "木の剣";
-let armor = "布の服";
-
-let items = 3;
-
-let friends = [
-"戦士",
-"魔法使い"
-];
+let player={
 hp:100,
 atk:10,
 lv:1,
@@ -112,32 +60,54 @@ exp:0,
 gold:0
 };
 
-let place="🌱草原";
-let enemyHP=0;
+let enemyHp=0;
+let weapon="木の剣";
+let armor="布の服";
+let potion=3;
+let friends=["戦士"];
+let areas=[
+"🌱草原",
+"🌲森",
+"🪨洞窟",
+"🏰城"
+];
 
-let monsters=["👾スライム","🐺オオカミ","🧟ゾンビ","🐉ドラゴン"];
+let monsters=[
+"👾スライム",
+"🐺オオカミ",
+"🧟ゾンビ",
+"🐉ドラゴン"
+];
+
 
 function move(){
 
-let r=Math.random();
+let area=
+areas[Math.floor(Math.random()*areas.length)];
 
-if(r<0.7){
+document.getElementById("area").textContent=area;
 
-let monster=monsters[Math.floor(Math.random()*monsters.length)];
 
-enemyHP=player.lv*50;
+if(Math.random()<0.8){
 
-document.getElementById("enemy").textContent=monster+"が出現！";
+let enemy=
+monsters[Math.floor(Math.random()*monsters.length)];
 
-document.getElementById("ehp").textContent=enemyHP;
+enemyHp=player.lv*50;
+
+document.getElementById("enemy").textContent=enemy;
+
+document.getElementById("enemyHp").textContent=enemyHp;
+
+log("敵が現れた！");
 
 }else{
 
-place="🏰城";
+document.getElementById("enemy").textContent="敵なし";
 
-document.getElementById("place").textContent=place;
+enemyHp=0;
 
-log("城に到着した！");
+log("安全な場所だ");
 
 }
 
@@ -146,15 +116,16 @@ log("城に到着した！");
 
 function attack(){
 
-if(enemyHP<=0)return;
+if(enemyHp<=0)return;
 
-let damage=player.atk+Math.floor(Math.random()*10);
+let damage=
+player.atk+Math.floor(Math.random()*10);
 
-enemyHP-=damage;
+enemyHp-=damage;
 
 log("攻撃！"+damage+"ダメージ");
 
-enemyAttack();
+enemyTurn();
 
 check();
 
@@ -163,13 +134,13 @@ check();
 
 function magic(){
 
-if(enemyHP<=0)return;
+if(enemyHp<=0)return;
 
-enemyHP-=30;
+enemyHp-=30;
 
 log("🔥魔法攻撃！30ダメージ");
 
-enemyAttack();
+enemyTurn();
 
 check();
 
@@ -180,7 +151,8 @@ function heal(){
 
 player.hp+=30;
 
-if(player.hp>100)player.hp=100;
+if(player.hp>100)
+player.hp=100;
 
 update();
 
@@ -189,13 +161,14 @@ log("HPを回復した");
 }
 
 
-function enemyAttack(){
+function enemyTurn(){
 
-if(enemyHP<=0)return;
+if(enemyHp<=0)return;
 
-let d=Math.floor(Math.random()*15)+5;
+let damage=
+Math.floor(Math.random()*15)+5;
 
-player.hp-=d;
+player.hp-=damage;
 
 update();
 
@@ -204,11 +177,11 @@ update();
 
 function check(){
 
-if(enemyHP<=0){
+if(enemyHp<=0){
 
 player.exp+=30;
-
 player.gold+=50;
+
 
 if(player.exp>=100){
 
@@ -220,12 +193,10 @@ log("レベルアップ！");
 
 }
 
-enemyHP=0;
 
-document.getElementById("enemy").textContent=
-"敵はいない";
+document.getElementById("enemy").textContent="敵なし";
 
-document.getElementById("ehp").textContent=0;
+document.getElementById("enemyHp").textContent=0;
 
 update();
 
@@ -250,18 +221,62 @@ function log(t){
 document.getElementById("log").textContent=t;
 
 }
+function equip(){
 
+if(player.gold>=100){
+
+player.gold-=100;
+player.atk+=10;
+weapon="鉄の剣";
+
+log("鉄の剣を装備！攻撃力アップ");
+
+}else{
+
+log("お金が足りない");
+
+}
+
+update();
+
+}
+
+
+function item(){
+
+if(potion>0){
+
+potion--;
+player.hp+=50;
+
+if(player.hp>100)
+player.hp=100;
+
+log("回復薬を使った！");
+
+update();
+
+}else{
+
+log("回復薬がない");
+
+}
+
+}
+
+
+function friend(){
+
+friends.push("魔法使い");
+
+player.atk+=5;
+
+log("魔法使いが仲間になった！");
+
+update();
+
+}
 </script>
 
-<h3>装備</h3>
-<p>
-武器：<span id="weapon">木の剣</span><br>
-防具：<span id="armor">布の服</span>
-</p>
-
-<button onclick="equip()">🗡️武器強化</button>
-<button onclick="useItem()">🎒回復薬</button>
-
-<h3>仲間</h3>
-<p>👥 戦士・魔法使い</p></body>
+</body>
 </html>
