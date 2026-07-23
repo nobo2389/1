@@ -6,19 +6,19 @@
 
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>Ultimate Breaker v2</title>
+<title>Ultra Block Universe</title>
 
 <style>
 
 body{
-background:#111;
+background:#080808;
 color:white;
 text-align:center;
 font-family:sans-serif;
 }
 
 canvas{
-background:black;
+background:#000;
 border:3px solid white;
 touch-action:none;
 }
@@ -29,6 +29,10 @@ padding:10px 20px;
 margin:5px;
 }
 
+.status{
+font-size:18px;
+}
+
 </style>
 
 </head>
@@ -36,47 +40,51 @@ margin:5px;
 <body>
 
 
-<h1>⚡ Ultimate Breaker v2 ⚡</h1>
+<h1>🌌 Ultra Block Universe 🌌</h1>
 
 
-<div>
+<div class="status">
 
 Lv:
-<span id="level">1</span>
+<span id="u_level">1</span>
 
 　
 
-Score:
-<span id="score">0</span>
-
-　
-
-Stage:
-<span id="stage">1</span>
+EXP:
+<span id="u_exp">0</span>
 
 <br>
 
-HP:
-<span id="hp">3</span>
+Score:
+<span id="u_score">0</span>
 
 　
 
 Coin:
-<span id="coin">0</span>
+<span id="u_coin">0</span>
+
+<br>
+
+Stage:
+<span id="u_stage">1</span>
+
+　
+
+HP:
+<span id="u_hp">3</span>
 
 </div>
 
 
-<canvas id="game" width="360" height="600"></canvas>
+<canvas id="u_canvas" width="360" height="600"></canvas>
 
 <br>
 
-
-<button onclick="gameStart()">
+<button onclick="u_start()">
 START
 </button>
 
-<button onclick="gameReset()">
+<button onclick="u_reset()">
 RESET
 </button>
 
@@ -85,46 +93,65 @@ RESET
 <script>
 
 
-const canvas=
-document.getElementById("game");
+// ==========================
+// 超大作メインデータ
+// ==========================
 
 
-const ctx=
-canvas.getContext("2d");
+const U={
 
-
-
-// ====================
-// データ
-// ====================
-
-
-let game={
 
 running:false,
+
 
 score:0,
 
 coin:0,
 
+
 stage:1,
+
 
 hp:3,
 
+
 level:1,
 
-exp:0
+
+exp:0,
+
+
+combo:0,
+
+
+damage:1
+
 
 };
 
 
 
-// ====================
-// ボール
-// ====================
 
 
-let ball={
+const UC=
+document.getElementById("u_canvas");
+
+
+const UX=
+UC.getContext("2d");
+
+
+
+
+
+
+// ==========================
+// プレイヤー
+// ==========================
+
+
+const UBall={
+
 
 x:180,
 
@@ -136,19 +163,18 @@ dx:4,
 
 dy:-4,
 
+
 power:1
+
 
 };
 
 
 
 
-// ====================
-// パドル
-// ====================
 
+const UPaddle={
 
-let paddle={
 
 x:140,
 
@@ -163,23 +189,28 @@ h:12
 
 
 
-// ====================
-// ブロック
-// ====================
-
-
-let blocks=[];
 
 
 
-function makeBlocks(){
+// ==========================
+// ブロック管理
+// ==========================
 
 
-blocks=[];
+let UBlocks=[];
+
+
+
+function u_createStage(){
+
+
+UBlocks=[];
+
 
 
 let rows=
-5+game.stage;
+5+
+Math.floor(U.stage/2);
 
 
 
@@ -189,7 +220,8 @@ for(let y=0;y<rows;y++){
 for(let x=0;x<8;x++){
 
 
-blocks.push({
+
+UBlocks.push({
 
 x:10+x*43,
 
@@ -199,15 +231,20 @@ w:38,
 
 h:18,
 
-hp:1,
+
+hp:
+1+Math.floor(U.stage/20),
+
+
+type:"normal",
+
 
 alive:true
+
 
 });
 
 
-}
-
 
 }
 
@@ -217,16 +254,23 @@ alive:true
 
 
 
+}
 
-// ====================
+
+
+
+
+
+// ==========================
 // 描画
-// ====================
+// ==========================
 
 
-function drawGame(){
+function u_draw(){
 
 
-ctx.clearRect(
+
+UX.clearRect(
 0,
 0,
 360,
@@ -237,56 +281,74 @@ ctx.clearRect(
 
 // ボール
 
-ctx.fillStyle="white";
+UX.fillStyle="white";
 
 
-ctx.beginPath();
+UX.beginPath();
 
 
-ctx.arc(
-ball.x,
-ball.y,
-ball.r,
+UX.arc(
+
+UBall.x,
+
+UBall.y,
+
+UBall.r,
+
 0,
+
 Math.PI*2
+
 );
 
 
-ctx.fill();
+UX.fill();
+
+
 
 
 
 // パドル
 
-ctx.fillStyle="cyan";
+UX.fillStyle="cyan";
 
 
-ctx.fillRect(
+UX.fillRect(
 
-paddle.x,
+UPaddle.x,
 
-paddle.y,
+UPaddle.y,
 
-paddle.w,
+UPaddle.w,
 
-paddle.h
+UPaddle.h
 
 );
 
 
 
+
+
 // ブロック
 
-for(let b of blocks){
+for(
+let b of UBlocks
+){
+
 
 
 if(b.alive){
 
 
-ctx.fillStyle="red";
+
+UX.fillStyle=
+b.hp>1?
+"orange":
+"red";
 
 
-ctx.fillRect(
+
+UX.fillRect(
 
 b.x,
 
@@ -299,8 +361,6 @@ b.h
 );
 
 
-}
-
 
 }
 
@@ -310,62 +370,73 @@ b.h
 
 
 
+}
 
 
 
-// ====================
+
+
+
+
+// ==========================
 // 更新
-// ====================
+// ==========================
 
 
-function gameLoop(){
+function u_loop(){
 
 
-if(!game.running)
+if(!U.running)
 return;
 
 
 
-ball.x+=ball.dx;
+UBall.x+=UBall.dx;
 
-ball.y+=ball.dy;
+UBall.y+=UBall.dy;
 
 
 
 
 if(
-ball.x<0||
-ball.x>360
+UBall.x<0||
+UBall.x>360
 ){
 
-ball.dx*=-1;
+UBall.dx*=-1;
 
 }
 
 
 
-if(ball.y<0){
+if(UBall.y<0){
 
-ball.dy*=-1;
+UBall.dy*=-1;
 
 }
 
 
 
 
-// パドル
+
+
 
 if(
 
-ball.y+ball.r>=paddle.y&&
+UBall.y+UBall.r>=UPaddle.y&&
 
-ball.x>=paddle.x&&
+UBall.x>=UPaddle.x&&
 
-ball.x<=paddle.x+paddle.w
+UBall.x<=UPaddle.x+UPaddle.w
 
 ){
 
-ball.dy=-Math.abs(ball.dy);
+
+UBall.dy=-Math.abs(UBall.dy);
+
+
+U.combo++;
+
 
 }
 
@@ -374,30 +445,27 @@ ball.dy=-Math.abs(ball.dy);
 
 
 
-// 落下
+
+if(UBall.y>600){
 
 
-if(ball.y>600){
+U.hp--;
 
 
-game.hp--;
+U.combo=0;
 
 
-document.getElementById(
-"hp"
-).innerText=
-game.hp;
+u_updateUI();
 
 
-
-resetBall();
+u_resetBall();
 
 
 
-if(game.hp<=0){
+if(U.hp<=0){
 
 
-game.running=false;
+U.running=false;
 
 
 alert("GAME OVER");
@@ -414,14 +482,17 @@ return;
 
 
 
-checkBlocks();
 
 
-drawGame();
+u_hitBlocks();
 
 
 
-requestAnimationFrame(gameLoop);
+u_draw();
+
+
+
+requestAnimationFrame(u_loop);
 
 
 
@@ -432,16 +503,19 @@ requestAnimationFrame(gameLoop);
 
 
 
-// ====================
-// ブロック判定
-// ====================
+
+// ==========================
+// ブロック処理
+// ==========================
 
 
-function checkBlocks(){
+function u_hitBlocks(){
 
 
 
-for(let b of blocks){
+for(
+let b of UBlocks
+){
 
 
 
@@ -452,35 +526,45 @@ continue;
 
 if(
 
-ball.x>b.x&&
+UBall.x>b.x&&
 
-ball.x<b.x+b.w&&
+UBall.x<b.x+b.w&&
 
-ball.y>b.y&&
+UBall.y>b.y&&
 
-ball.y<b.y+b.h
+UBall.y<b.y+b.h
 
 ){
 
 
 
+b.hp--;
+
+
+UBall.dy*=-1;
+
+
+
+if(b.hp<=0){
+
+
 b.alive=false;
 
 
-ball.dy*=-1;
+U.score+=10*U.combo;
+
+
+U.coin++;
+
+
+U.exp+=5;
+
+
+}
 
 
 
-game.score+=10;
-
-game.coin+=1;
-
-
-game.exp+=5;
-
-
-
-updateUI();
+u_updateUI();
 
 
 
@@ -492,7 +576,7 @@ updateUI();
 
 
 
-checkStage();
+u_checkClear();
 
 
 
@@ -503,15 +587,16 @@ checkStage();
 
 
 
-
-function checkStage(){
+function u_checkClear(){
 
 
 let remain=false;
 
 
 
-for(let b of blocks){
+for(
+let b of UBlocks
+){
 
 
 if(b.alive){
@@ -522,6 +607,7 @@ break;
 
 }
 
+
 }
 
 
@@ -530,23 +616,19 @@ if(!remain){
 
 
 
-game.stage++;
+U.stage++;
 
 
-makeBlocks();
+u_createStage();
 
 
-resetBall();
-
-
-
-updateUI();
+u_resetBall();
 
 
 
 alert(
-"Stage "+
-game.stage
+"STAGE "+
+U.stage
 );
 
 
@@ -562,226 +644,292 @@ game.stage
 
 
 
-// ====================
+
+function u_resetBall(){
+
+
+UBall.x=180;
+
+UBall.y=400;
+
+UBall.dx=4;
+
+UBall.dy=-4;
+
+
+}
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+function u_updateUI(){
+
+
+document.getElementById("u_level").innerText=U.level;
+
+document.getElementById("u_exp").innerText=U.exp;
+
+document.getElementById("u_score").innerText=U.score;
+
+document.getElementById("u_coin").innerText=U.coin;
+
+document.getElementById("u_stage").innerText=U.stage;
+
+document.getElementById("u_hp").innerText=U.hp;
+
+
+}
+
+
+
+
+
+
+function u_start(){
+
+
+if(!U.running){
+
+
+U.running=true;
+
+
+u_loop();
+
+
+}
+
+
+
+}
+
+
+
+
+
+function u_reset(){
+
+
+U.running=false;
+
+
+U.score=0;
+
+U.coin=0;
+
+U.stage=1;
+
+U.hp=3;
+
+U.exp=0;
+
+
+u_createStage();
+
+
+u_resetBall();
+
+
+u_updateUI();
+
+
+u_draw();
+
+
+}
+
+
+
+
+
 // 操作
-// ====================
 
-
-function resetBall(){
-
-
-ball.x=180;
-
-ball.y=400;
-
-ball.dx=4;
-
-ball.dy=-4;
-
-
-}
-
-
-
-
-
-function gameStart(){
-
-
-
-if(!game.running){
-
-
-game.running=true;
-
-
-gameLoop();
-
-
-
-}
-
-
-
-}
-
-
-
-
-function gameReset(){
-
-
-game.running=false;
-
-
-game.score=0;
-
-game.coin=0;
-
-game.stage=1;
-
-game.hp=3;
-
-
-makeBlocks();
-
-resetBall();
-
-updateUI();
-
-drawGame();
-
-
-
-}
-
-
-
-
-function updateUI(){
-
-
-document.getElementById(
-"level"
-).innerText=
-game.level;
-
-
-document.getElementById(
-"score"
-).innerText=
-game.score;
-
-
-document.getElementById(
-"stage"
-).innerText=
-game.stage;
-
-
-document.getElementById(
-"hp"
-).innerText=
-game.hp;
-
-
-document.getElementById(
-"coin"
-).innerText=
-game.coin;
-
-
-
-}
-
-
-
-
-
-
-// マウス
-
-canvas.addEventListener(
+UC.addEventListener(
 "mousemove",
-function(e){
+e=>{
 
 
 let r=
-canvas.getBoundingClientRect();
+UC.getBoundingClientRect();
 
 
-paddle.x=
-e.clientX-r.left-paddle.w/2;
+UPaddle.x=
+e.clientX-r.left-
+UPaddle.w/2;
 
 
 });
 
 
 
-
-// タッチ
-
-canvas.addEventListener(
+UC.addEventListener(
 "touchmove",
-function(e){
+e=>{
 
 
 let r=
-canvas.getBoundingClientRect();
+UC.getBoundingClientRect();
 
 
-paddle.x=
-e.touches[0].clientX-r.left-paddle.w/2;
+UPaddle.x=
+e.touches[0].clientX-r.left-
+UPaddle.w/2;
 
 
 e.preventDefault();
 
 
 },
-{
-passive:false
-});
+{passive:false}
+);
 
 
 
 
 
 
-makeBlocks();
 
-updateUI();
+u_createStage();
 
-drawGame();// ====================
-// Part2
-// アイテム・強化
-// ====================
+u_updateUI();
 
-
-let items=[];
+u_draw();// ==========================
+// 超大作 Part2
+// 属性・スキルシステム
+// ==========================
 
 
-let upgradeData={
+// プレイヤー拡張
 
-power:1,
+U.mana=100;
 
-paddle:1,
+U.critical=5;
 
-speed:1
+U.element="normal";
+
+
+
+
+// 属性データ
+
+const UElements={
+
+
+fire:{
+
+name:"🔥炎",
+
+damage:1.5,
+
+effect:"爆発"
+
+},
+
+
+ice:{
+
+name:"❄氷",
+
+damage:1.2,
+
+effect:"減速"
+
+},
+
+
+thunder:{
+
+name:"⚡雷",
+
+damage:2,
+
+effect:"連鎖"
+
+},
+
+
+normal:{
+
+name:"通常",
+
+damage:1,
+
+effect:"なし"
+
+}
+
 
 };
 
 
 
 
-// --------------------
-// レベル処理
-// --------------------
+
+// ==========================
+// クリティカル計算
+// ==========================
 
 
-function addExperience(value){
+function u_damage(){
 
 
-game.exp+=value;
+let damage=
+UBall.power;
 
 
 
 if(
-game.exp>=game.level*100
+Math.random()*100
+<
+U.critical
 ){
 
 
-game.exp=0;
+damage*=2;
 
 
-game.level++;
+}
 
 
-game.coin+=50;
+
+return damage;
+
+
+
+}
+
+
+
+
+
+
+// ==========================
+// 属性変更
+// ==========================
+
+
+function u_changeElement(type){
+
+
+if(UElements[type]){
+
+
+U.element=type;
 
 
 
 alert(
-"LEVEL UP Lv."+game.level
+
+"属性変更 "+
+UElements[type].name
+
 );
 
 
@@ -789,6 +937,128 @@ alert(
 }
 
 
+}
+
+
+
+
+
+
+// ==========================
+// スキル
+// ==========================
+
+
+const USkills={
+
+
+bomb:{
+
+
+name:"爆破",
+
+cost:30
+
+
+},
+
+
+laser:{
+
+
+name:"レーザー",
+
+cost:50
+
+
+},
+
+
+freeze:{
+
+
+name:"時間停止",
+
+cost:40
+
+
+}
+
+
+};
+
+
+
+
+
+
+function u_useSkill(skill){
+
+
+
+let s=
+USkills[skill];
+
+
+
+if(!s)
+return;
+
+
+
+if(U.mana<s.cost){
+
+
+alert("マナ不足");
+
+
+return;
+
+
+}
+
+
+
+U.mana-=s.cost;
+
+
+
+
+
+if(skill==="bomb"){
+
+
+
+for(let b of UBlocks){
+
+
+
+if(b.alive){
+
+
+b.hp--;
+
+
+if(b.hp<=0){
+
+
+b.alive=false;
+
+
+U.score+=50;
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
 
 }
 
@@ -797,93 +1067,20 @@ alert(
 
 
 
-// --------------------
-// アイテム生成
-// --------------------
-
-
-function createItem(x,y){
+if(skill==="laser"){
 
 
 
-if(Math.random()<0.25){
+for(let i=0;i<UBlocks.length;i++){
 
 
 
-items.push({
-
-x:x,
-
-y:y,
-
-type:
-Math.floor(Math.random()*4)
-
-});
-
-
-}
+if(UBlocks[i].alive){
 
 
 
-}
+UBlocks[i].hp-=3;
 
-
-
-
-
-
-// --------------------
-// アイテム更新
-// --------------------
-
-
-function updateItems(){
-
-
-
-for(
-let i=items.length-1;
-i>=0;
-i--
-){
-
-
-
-let item=items[i];
-
-
-item.y+=3;
-
-
-
-if(
-
-item.y>=paddle.y&&
-
-item.x>=paddle.x&&
-
-item.x<=paddle.x+paddle.w
-
-){
-
-
-
-applyItem(item.type);
-
-
-items.splice(i,1);
-
-
-}
-
-
-
-
-if(item.y>600){
-
-
-items.splice(i,1);
 
 
 }
@@ -901,26 +1098,23 @@ items.splice(i,1);
 
 
 
-// --------------------
-// アイテム効果
-// --------------------
-
-
-function applyItem(type){
+if(skill==="freeze"){
 
 
 
-if(type===0){
+UBall.dx*=0.5;
 
+UBall.dy*=0.5;
 
-// パドル拡大
-
-paddle.w+=30;
 
 
 setTimeout(()=>{
 
-paddle.w-=30;
+
+UBall.dx*=2;
+
+UBall.dy*=2;
+
 
 },5000);
 
@@ -930,50 +1124,7 @@ paddle.w-=30;
 
 
 
-
-if(type===1){
-
-
-// 攻撃力
-
-ball.power++;
-
-
-
-}
-
-
-
-
-if(type===2){
-
-
-// コイン
-
-game.coin+=100;
-
-
-
-}
-
-
-
-
-if(type===3){
-
-
-// HP
-
-game.hp++;
-
-
-
-}
-
-
-
-updateUI();
-
+u_updateUI();
 
 
 }
@@ -984,201 +1135,52 @@ updateUI();
 
 
 
-
-// --------------------
-// アイテム描画
-// --------------------
-
-
-function drawItems(){
+// ==========================
+// ブロック属性攻撃
+// ==========================
 
 
 
-for(let item of items){
-
-
-ctx.fillStyle=
-[
-"yellow",
-"lime",
-"gold",
-"pink"
-][item.type];
+function u_elementAttack(block){
 
 
 
-ctx.fillRect(
+let data=
+UElements[U.element];
 
-item.x,
 
-item.y,
 
-12,
+let damage=
+u_damage()
+*
+data.damage;
 
-12
 
-);
+
+block.hp-=damage;
+
+
+
+
+if(block.hp<=0){
+
+
+
+block.alive=false;
+
+
+U.score+=20;
+
+
+U.coin+=2;
+
+
+U.exp+=10;
 
 
 
 }
 
-
-
-}
-
-
-
-
-
-// 描画追加
-
-const oldDrawItems=
-drawGame;
-
-
-drawGame=function(){
-
-
-oldDrawItems();
-
-
-drawItems();
-
-
-};
-
-
-
-
-
-
-// --------------------
-// ブロック報酬追加
-// --------------------
-
-
-const oldCheckBlocks=
-checkBlocks;
-
-
-
-checkBlocks=function(){
-
-
-
-for(let b of blocks){
-
-
-
-if(!b.alive)
-continue;
-
-
-
-if(
-
-ball.x>b.x&&
-
-ball.x<b.x+b.w&&
-
-ball.y>b.y&&
-
-ball.y<b.y+b.h
-
-){
-
-
-
-b.alive=false;
-
-
-ball.dy*=-1;
-
-
-
-game.score+=10;
-
-
-game.coin+=1;
-
-
-
-addExperience(5);
-
-
-
-createItem(
-
-b.x,
-
-b.y
-
-);
-
-
-
-updateUI();
-
-
-
-}
-
-
-
-}
-
-
-
-checkStage();
-
-
-
-};
-
-
-
-
-
-
-// --------------------
-// 強化
-// --------------------
-
-
-function powerUpgrade(){
-
-
-
-let cost=
-upgradeData.power*100;
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-upgradeData.power++;
-
-
-ball.power++;
-
-
-
-alert(
-"攻撃力強化"
-);
-
-
-
-}
-
-
-updateUI();
 
 
 
@@ -1188,172 +1190,183 @@ updateUI();
 
 
 
-function paddleUpgrade(){
 
 
+// スキルボタン追加
 
-let cost=
-upgradeData.paddle*150;
 
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-upgradeData.paddle++;
-
-
-paddle.w+=10;
-
-
-
-alert(
-"パドル強化"
-);
-
-
-
-}
-
-
-updateUI();
-
-
-
-}
-
-
-
-
-
-function speedUpgrade(){
-
-
-
-let cost=
-upgradeData.speed*200;
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-upgradeData.speed++;
-
-
-ball.dx*=1.1;
-
-ball.dy*=1.1;
-
-
-
-alert(
-"速度強化"
-);
-
-
-
-}
-
-
-updateUI();
-
-
-
-}
-
-
-
-
-
-// --------------------
-// 更新追加
-// --------------------
-
-
-const oldGameLoop=
-gameLoop;
-
-
-gameLoop=function(){
-
-
-
-updateItems();
-
-
-
-oldGameLoop();
-
-
-
-};
-
-
-
-
-// UI
-
-let upgradeMenu=
+let skillUI=
 document.createElement("div");
 
 
 
-upgradeMenu.innerHTML=`
+skillUI.innerHTML=
 
-<h3>強化</h3>
+`
 
-<button onclick="powerUpgrade()">
-攻撃
+<h3>スキル</h3>
+
+<button onclick="u_useSkill('bomb')">
+💥爆破
 </button>
 
-<button onclick="paddleUpgrade()">
-パドル
+
+<button onclick="u_useSkill('laser')">
+🔴レーザー
 </button>
 
-<button onclick="speedUpgrade()">
-速度
+
+<button onclick="u_useSkill('freeze')">
+❄停止
 </button>
+
+
+<br>
+
+
+<button onclick="u_changeElement('fire')">
+🔥炎
+</button>
+
+
+<button onclick="u_changeElement('ice')">
+❄氷
+</button>
+
+
+<button onclick="u_changeElement('thunder')">
+⚡雷
+</button>
+
 
 `;
 
 
 
 document.body.insertBefore(
-upgradeMenu,
-canvas
-);// ====================
-// Part3
-// ボス・装備・ガチャ
-// ====================
+skillUI,
+UC
+);
 
 
-let bossData={
 
-active:false,
 
-hp:0,
 
-max:0
+// マナ回復
+
+setInterval(()=>{
+
+
+if(U.mana<100){
+
+
+U.mana++;
+
+
+}
+
+
+},1000);// ==========================
+// 超大作 Part3
+// 装備・強化システム
+// ==========================
+
+
+
+const UEquipment={
+
+
+ball:{
+
+name:"ノーマルボール",
+
+rarity:"N",
+
+level:1,
+
+power:1
+
+
+},
+
+
+
+paddle:{
+
+name:"ノーマルパドル",
+
+rarity:"N",
+
+level:1,
+
+width:0
+
+
+}
+
+
 
 };
 
 
 
-let equipmentData={
 
 
-ball:"ノーマル",
 
-paddle:"ノーマル"
+
+const URarity={
+
+
+N:{
+
+name:"ノーマル",
+
+rate:1
+
+
+},
+
+
+R:{
+
+name:"レア",
+
+rate:1.5
+
+
+},
+
+
+SR:{
+
+name:"スーパーレア",
+
+rate:2
+
+
+},
+
+
+SSR:{
+
+name:"ウルトラレア",
+
+rate:3
+
+
+},
+
+
+UR:{
+
+name:"究極",
+
+rate:5
+
+
+}
+
+
 
 };
 
@@ -1362,36 +1375,31 @@ paddle:"ノーマル"
 
 
 
-// --------------------
-// ボス生成
-// --------------------
+
+// ==========================
+// 装備装着
+// ==========================
 
 
-function createBoss(){
-
-
-
-bossData.active=true;
-
-
-bossData.max=
-500+
-game.stage*200;
-
-
-bossData.hp=
-bossData.max;
+function u_equipBall(item){
 
 
 
-blocks=[];
+UEquipment.ball=item;
+
+
+
+UBall.power=
+
+item.level*
+item.power;
 
 
 
 alert(
 
-"⚠ BOSS出現 HP "+
-bossData.hp
+"装備変更\n"+
+item.name
 
 );
 
@@ -1404,53 +1412,18 @@ bossData.hp
 
 
 
-
-// --------------------
-// ボス描画
-// --------------------
-
-
-function drawBoss(){
+function u_equipPaddle(item){
 
 
 
-if(!bossData.active)
-return;
+UEquipment.paddle=item;
 
 
 
-ctx.fillStyle="purple";
-
-
-ctx.fillRect(
-
-40,
-
-70,
-
-280,
-
-60
-
-);
-
-
-
-ctx.fillStyle="white";
-
-
-ctx.font="16px sans-serif";
-
-
-ctx.fillText(
-
-"BOSS HP:"+bossData.hp,
-
-120,
-
-105
-
-);
+UPaddle.w=
+80+
+item.width*
+10;
 
 
 
@@ -1461,187 +1434,80 @@ ctx.fillText(
 
 
 
-const oldDrawBoss=
-drawGame;
+
+// ==========================
+// 装備作成
+// ==========================
+
+
+function u_createEquipment(){
 
 
 
-drawGame=function(){
+let r=
+Math.random()*100;
 
 
 
-oldDrawBoss();
-
-
-drawBoss();
+let rarity;
 
 
 
-};
+if(r<50){
 
-
-
-
-
-
-
-
-// --------------------
-// ボス判定
-// --------------------
-
-
-function hitBoss(){
-
-
-
-if(!bossData.active)
-return;
-
-
-
-if(
-
-ball.y<150&&
-
-ball.x>40&&
-
-ball.x<320
-
-){
-
-
-
-bossData.hp-=ball.power;
-
-
-ball.dy*=-1;
-
-
-
-if(bossData.hp<=0){
-
-
-
-bossData.active=false;
-
-
-game.score+=1000;
-
-
-game.coin+=500;
-
-
-addExperience(200);
-
-
-
-alert(
-"🎉 BOSS撃破"
-);
-
-
+rarity="N";
 
 }
 
+else if(r<80){
 
-
-}
-
-
+rarity="R";
 
 }
 
+else if(r<95){
 
-
-
-
-
-
-// --------------------
-// ステージ変更
-// --------------------
-
-
-const oldStageCheck=
-checkStage;
-
-
-
-checkStage=function(){
-
-
-
-let alive=false;
-
-
-
-for(let b of blocks){
-
-
-
-if(b.alive){
-
-alive=true;
-
-break;
+rarity="SR";
 
 }
 
+else if(r<99){
 
-}
-
-
-
-
-if(!alive){
-
-
-
-game.stage++;
-
-
-game.coin+=game.stage*20;
-
-
-
-if(
-game.stage%5===0
-){
-
-
-createBoss();
-
+rarity="SSR";
 
 }
 
 else{
 
-
-makeBlocks();
-
+rarity="UR";
 
 }
 
 
 
-resetBall();
 
 
-updateUI();
-
-
-
-alert(
-
-"STAGE "+
-game.stage
-
-);
+let data=
+URarity[rarity];
 
 
 
-}
+
+
+return {
+
+
+name:
+data.name+"ボール",
+
+
+rarity:rarity,
+
+
+level:1,
+
+
+power:data.rate
 
 
 
@@ -1649,26 +1515,29 @@ game.stage
 
 
 
+}
 
 
 
 
-// --------------------
-// ガチャ
-// --------------------
 
 
 
-function openGacha(){
+
+// ==========================
+// 装備ガチャ
+// ==========================
+
+
+function u_equipmentGacha(){
 
 
 
-let cost=300;
+let cost=500;
 
 
 
-if(game.coin<cost){
-
+if(U.coin<cost){
 
 
 alert(
@@ -1683,69 +1552,31 @@ return;
 
 
 
-game.coin-=cost;
+U.coin-=cost;
 
 
 
-let r=
-Math.random()*100;
+let item=
+u_createEquipment();
 
 
 
-let result;
-
-
-
-if(r<60){
-
-
-result="ノーマル";
-
-
-}
-
-else if(r<85){
-
-
-result="レア";
-
-
-}
-
-else if(r<98){
-
-
-result="スーパーレア";
-
-
-}
-
-else{
-
-
-result="伝説";
-
-
-}
-
-
-
-
-
-equipmentData.ball=result;
+u_equipBall(item);
 
 
 
 alert(
 
-"🎁 ガチャ結果\n"+
-result
+"🎁獲得\n"+
+item.name+
+"\nレア度 "+
+item.rarity
 
 );
 
 
 
-updateUI();
+u_updateUI();
 
 
 
@@ -1758,36 +1589,60 @@ updateUI();
 
 
 
-// --------------------
-// 更新追加
-// --------------------
+// ==========================
+// 強化
+// ==========================
+
+
+function u_upgradeEquipment(){
 
 
 
-const oldBossLoop=
-gameLoop;
+let eq=
+UEquipment.ball;
 
 
 
-gameLoop=function(){
+let cost=
+eq.level*200;
 
 
 
-if(bossData.active){
+if(U.coin>=cost){
 
 
-hitBoss();
+
+U.coin-=cost;
+
+
+eq.level++;
+
+
+
+UBall.power=
+eq.level*
+eq.power;
+
+
+
+alert(
+
+"装備強化 Lv"+
+eq.level
+
+);
+
 
 
 }
 
 
 
-oldBossLoop();
+u_updateUI();
 
 
 
-};
+}
 
 
 
@@ -1795,65 +1650,602 @@ oldBossLoop();
 
 
 
-// ガチャボタン
 
-let gachaUI=
+// ==========================
+// 装備表示
+// ==========================
+
+
+
+let equipUI=
 document.createElement("div");
 
 
 
-gachaUI.innerHTML=`
+equipUI.innerHTML=
 
-<h3>ガチャ</h3>
+`
 
-<button onclick="openGacha()">
-300コイン
-</button>
+<h3>装備</h3>
 
 <p>
 ボール:
-<span id="equip">
-ノーマル
+<span id="u_equip_name">
+${UEquipment.ball.name}
 </span>
 </p>
+
+
+<button onclick="u_equipmentGacha()">
+装備ガチャ 500
+</button>
+
+
+<button onclick="u_upgradeEquipment()">
+装備強化
+</button>
+
 
 `;
 
 
 
 document.body.insertBefore(
-
-gachaUI,
-
-canvas
-
-);// ====================
-// Part4
-// セーブ・放置・実績
-// ====================
+equipUI,
+UC
+);// ==========================
+// 超大作 Part4
+// ワールド・ボス・特殊ブロック
+// ==========================
 
 
 
-let achievementData={
+U.world=1;
+
+U.bossCount=0;
 
 
-blocks:0,
 
-boss:0,
 
-time:0
+
+// ==========================
+// ワールド設定
+// ==========================
+
+
+const UWorlds={
+
+
+1:{
+name:"🌍草原",
+color:"green"
+},
+
+
+2:{
+name:"🌋火山",
+color:"orange"
+},
+
+
+3:{
+name:"🌊深海",
+color:"blue"
+},
+
+
+4:{
+name:"🌌宇宙",
+color:"purple"
+},
+
+
+5:{
+name:"✨異世界",
+color:"gold"
+}
+
 
 
 };
 
 
 
-let missionData={
 
 
-target:100,
 
-reward:1000,
+// ==========================
+// 特殊ブロック
+// ==========================
+
+
+function u_createSpecialBlock(x,y){
+
+
+
+let type=
+Math.floor(
+Math.random()*5
+);
+
+
+
+return {
+
+
+x:x,
+
+y:y,
+
+w:38,
+
+h:18,
+
+hp:2+U.world,
+
+alive:true,
+
+type:type
+
+
+
+};
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 特殊効果
+// ==========================
+
+
+function u_specialEffect(block){
+
+
+
+if(block.type===0){
+
+
+// 爆発
+
+
+for(let b of UBlocks){
+
+
+
+if(
+
+Math.abs(b.x-block.x)<60&&
+
+Math.abs(b.y-block.y)<60
+
+){
+
+
+b.hp--;
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+if(block.type===1){
+
+
+// 回復
+
+
+U.hp++;
+
+
+}
+
+
+
+
+
+if(block.type===2){
+
+
+// コイン
+
+
+U.coin+=50;
+
+
+}
+
+
+
+
+
+if(block.type===3){
+
+
+// 分裂攻撃
+
+
+UBall.power++;
+
+
+}
+
+
+
+
+
+if(block.type===4){
+
+
+// 経験値
+
+
+U.exp+=50;
+
+
+}
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ボス
+// ==========================
+
+
+const UBoss={
+
+
+active:false,
+
+hp:0,
+
+maxHp:0,
+
+name:""
+
+
+
+};
+
+
+
+
+
+
+
+
+function u_startBoss(){
+
+
+
+UBoss.active=true;
+
+
+
+UBoss.maxHp=
+
+1000+
+
+U.stage*500;
+
+
+
+UBoss.hp=
+UBoss.maxHp;
+
+
+
+UBoss.name=
+
+UWorlds[U.world].name+
+"ボス";
+
+
+
+UBlocks=[];
+
+
+
+alert(
+
+"⚠ "+
+UBoss.name+
+" 出現\nHP "+
+UBoss.hp
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+function u_bossDamage(){
+
+
+
+if(!UBoss.active)
+return;
+
+
+
+if(
+
+UBall.y<160&&
+
+UBall.x>40&&
+
+UBall.x<320
+
+){
+
+
+
+UBoss.hp-=
+
+UBall.power*10;
+
+
+
+UBall.dy*=-1;
+
+
+
+if(UBoss.hp<=0){
+
+
+
+UBoss.active=false;
+
+
+U.score+=5000;
+
+
+U.coin+=1000;
+
+
+U.bossCount++;
+
+
+U.exp+=500;
+
+
+
+alert(
+
+"🎉 ボス撃破！"
+
+);
+
+
+
+u_nextWorld();
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+function u_drawBoss(){
+
+
+
+if(!UBoss.active)
+return;
+
+
+
+UX.fillStyle="purple";
+
+
+UX.fillRect(
+
+40,
+
+70,
+
+280,
+
+60
+
+);
+
+
+
+UX.fillStyle="white";
+
+
+UX.fillText(
+
+UBoss.name+
+" HP:"+UBoss.hp,
+
+80,
+
+105
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ワールド進行
+// ==========================
+
+
+function u_nextWorld(){
+
+
+
+if(U.bossCount%5===0){
+
+
+U.world++;
+
+
+
+if(U.world>5)
+
+U.world=5;
+
+
+
+}
+
+
+
+U.stage++;
+
+
+u_createStage();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ボス描画追加
+
+
+const u_oldDraw4=
+u_draw;
+
+
+u_draw=function(){
+
+
+u_oldDraw4();
+
+
+u_drawBoss();
+
+
+};
+
+
+
+
+
+
+
+// ボス処理追加
+
+
+const u_oldLoop4=
+u_loop;
+
+
+
+u_loop=function(){
+
+
+
+if(UBoss.active){
+
+
+u_bossDamage();
+
+
+}
+
+
+
+u_oldLoop4();
+
+
+
+};// ==========================
+// 超大作 Part5
+// クエスト・実績・セーブ
+// ==========================
+
+
+
+const UAchievement={
+
+
+break:0,
+
+boss:0,
+
+coin:0,
+
+stage:0
+
+
+};
+
+
+
+
+
+const UQuest={
+
+
+breakTarget:500,
+
+coinTarget:10000,
 
 clear:false
 
@@ -1865,34 +2257,204 @@ clear:false
 
 
 
-// --------------------
+
+// ==========================
+// 実績処理
+// ==========================
+
+
+
+function u_addBreakAchievement(){
+
+
+
+UAchievement.break++;
+
+
+
+if(
+
+UAchievement.break===100
+
+){
+
+
+
+U.coin+=500;
+
+
+alert(
+
+"🏆 実績解除\n100ブロック破壊"
+
+);
+
+
+
+}
+
+
+
+if(
+
+UAchievement.break===1000
+
+){
+
+
+
+U.coin+=5000;
+
+
+alert(
+
+"🏆 実績解除\n1000ブロック破壊"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+function u_addBossAchievement(){
+
+
+
+UAchievement.boss++;
+
+
+
+if(
+
+UAchievement.boss===10
+
+){
+
+
+
+U.coin+=10000;
+
+
+
+alert(
+
+"🏆 ボス討伐王"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// クエスト
+// ==========================
+
+
+
+function u_checkQuest(){
+
+
+
+if(
+
+UAchievement.break>=
+UQuest.breakTarget
+
+&&
+!UQuest.clear
+
+){
+
+
+
+UQuest.clear=true;
+
+
+
+U.coin+=3000;
+
+
+
+alert(
+
+"🎯 クエスト達成!"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
 // セーブ
-// --------------------
+// ==========================
 
 
 
-function saveGameData(){
+function u_save(){
 
 
 
-let save={
+let data={
 
 
-game:game,
 
-ball:ball,
+game:U,
 
-paddle:paddle,
+
+ball:UBall,
+
+
+paddle:UPaddle,
+
+
+equipment:UEquipment,
+
 
 upgrade:upgradeData,
 
-equipment:equipmentData,
 
-achievement:achievementData,
+achievement:UAchievement,
 
-mission:missionData,
 
-last:Date.now()
+quest:UQuest,
+
+
+world:U.world
 
 
 
@@ -1902,9 +2464,9 @@ last:Date.now()
 
 localStorage.setItem(
 
-"UltimateBreakerV2",
+"UltraBlockSave",
 
-JSON.stringify(save)
+JSON.stringify(data)
 
 );
 
@@ -1918,13 +2480,14 @@ JSON.stringify(save)
 
 
 
-// --------------------
+
+// ==========================
 // ロード
-// --------------------
+// ==========================
 
 
 
-function loadGameData(){
+function u_load(){
 
 
 
@@ -1932,13 +2495,14 @@ let data=
 
 localStorage.getItem(
 
-"UltimateBreakerV2"
+"UltraBlockSave"
 
 );
 
 
 
 if(!data)
+
 return;
 
 
@@ -1949,56 +2513,35 @@ JSON.parse(data);
 
 
 
-Object.assign(
-game,
-save.game
-);
+Object.assign(U,save.game);
+
+
+Object.assign(UBall,save.ball);
+
+
+Object.assign(UPaddle,save.paddle);
+
+
+Object.assign(UEquipment,save.equipment);
+
+
+Object.assign(upgradeData,save.upgrade);
+
+
+Object.assign(UAchievement,save.achievement);
+
+
+Object.assign(UQuest,save.quest);
 
 
 
-Object.assign(
-ball,
-save.ball
-);
+U.world=
+
+save.world||1;
 
 
 
-Object.assign(
-paddle,
-save.paddle
-);
-
-
-
-Object.assign(
-upgradeData,
-save.upgrade
-);
-
-
-
-Object.assign(
-equipmentData,
-save.equipment
-);
-
-
-
-Object.assign(
-achievementData,
-save.achievement
-);
-
-
-
-Object.assign(
-missionData,
-save.mission
-);
-
-
-
-updateUI();
+u_updateUI();
 
 
 
@@ -2011,13 +2554,13 @@ updateUI();
 
 
 
-// --------------------
+// ==========================
 // 放置報酬
-// --------------------
+// ==========================
 
 
 
-function offlineBonus(){
+function u_offlineReward(){
 
 
 
@@ -2027,7 +2570,7 @@ Number(
 
 localStorage.getItem(
 
-"breakerLast"
+"UltraLast"
 
 )
 
@@ -2035,12 +2578,11 @@ localStorage.getItem(
 
 
 
-
 let now=Date.now();
 
 
 
-let seconds=
+let sec=
 
 Math.floor(
 
@@ -2052,21 +2594,15 @@ Math.floor(
 
 let reward=
 
-Math.min(
-
-seconds,
-
-3600
-
-);
+Math.min(sec,7200);
 
 
 
-if(reward>5){
+if(reward>60){
 
 
 
-game.coin+=reward;
+U.coin+=reward;
 
 
 
@@ -2086,7 +2622,7 @@ reward+
 
 localStorage.setItem(
 
-"breakerLast",
+"UltraLast",
 
 now
 
@@ -2102,187 +2638,17 @@ now
 
 
 
-// --------------------
-// 実績
-// --------------------
 
-
-
-function addAchievement(){
-
-
-
-achievementData.blocks++;
-
-
-
-if(
-
-achievementData.blocks===100
-
-){
-
-
-
-game.coin+=1000;
-
-
-
-alert(
-
-"実績解除\n100ブロック破壊"
-
-);
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-function bossAchievement(){
-
-
-
-achievementData.boss++;
-
-
-
-if(
-
-achievementData.boss===10
-
-){
-
-
-
-game.coin+=5000;
-
-
-
-alert(
-
-"実績解除\nボス10体撃破"
-
-);
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-// --------------------
-// ミッション
-// --------------------
-
-
-
-function checkMission(){
-
-
-
-if(
-
-achievementData.blocks>=missionData.target
-
-&&
-!missionData.clear
-
-){
-
-
-
-missionData.clear=true;
-
-
-game.coin+=missionData.reward;
-
-
-
-alert(
-
-"ミッション達成！"
-
-);
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-
-// --------------------
-// 破壊数記録
-// --------------------
-
-
-
-let oldAddExp=
-
-addExperience;
-
-
-
-addExperience=function(value){
-
-
-
-oldAddExp(value);
-
-
-
-addAchievement();
-
-
-checkMission();
-
-
-
-};
-
-
-
-
-
-
-
-
-// --------------------
+// ==========================
 // 自動保存
-// --------------------
+// ==========================
 
 
 
-setInterval(function(){
+setInterval(()=>{
 
 
-
-saveGameData();
-
+u_save();
 
 
 },30000);
@@ -2291,89 +2657,29 @@ saveGameData();
 
 
 
+// 起動時
+
+u_load();
 
 
-// プレイ時間
-
-setInterval(function(){
-
-
-achievementData.time++;
-
-
-},1000);
-
+u_offlineReward();// ==========================
+// 超大作 Part6
+// ペット・仲間・研究
+// ==========================
 
 
 
+const UPet={
 
 
+name:"なし",
 
-loadGameData();
+level:0,
 
-
-offlineBonus();// ====================
-// Part5
-// 最終処理
-// ====================
+damage:0,
 
 
-// タイトル表示
-
-let titleBox=document.createElement("div");
-
-
-titleBox.innerHTML=`
-
-<h2>
-⚡ Ultimate Breaker v2 ⚡
-</h2>
-
-<p>
-最強のブロック崩しを目指せ
-</p>
-
-`;
-
-document.body.insertBefore(
-titleBox,
-canvas
-);
-
-
-
-
-
-// ボス撃破記録
-
-let bossClearCheck=
-hitBoss;
-
-
-hitBoss=function(){
-
-
-let before=
-bossData.hp;
-
-
-bossClearCheck();
-
-
-
-if(
-before>0 &&
-bossData.hp<=0
-){
-
-
-achievementData.boss++;
-
-
-bossAchievement();
-
-
-}
+active:false
 
 
 };
@@ -2383,35 +2689,191 @@ bossAchievement();
 
 
 
-
-// 完全クリア
-
-function finalClear(){
+const UResearch={
 
 
+attack:0,
 
-if(game.stage>=100){
+defense:0,
+
+coin:0,
+
+luck:0
+
+
+};
 
 
 
-game.running=false;
+
+
+
+// ==========================
+// ペット一覧
+// ==========================
+
+
+const UPetList=[
+
+
+{
+name:"🔥ファイアドラゴン",
+damage:5
+},
+
+
+{
+name:"❄アイスフェアリー",
+damage:3
+},
+
+
+{
+name:"⚡サンダーバード",
+damage:8
+},
+
+
+{
+name:"🌑ダークウルフ",
+damage:10
+}
+
+
+];
+
+
+
+
+
+
+
+// ==========================
+// ペット召喚
+// ==========================
+
+
+function u_summonPet(){
+
+
+
+let cost=2000;
+
+
+
+if(U.coin<cost){
+
+
+alert(
+"コイン不足"
+);
+
+
+return;
+
+
+}
+
+
+
+U.coin-=cost;
+
+
+
+let pet=
+
+UPetList[
+
+Math.floor(
+Math.random()*
+UPetList.length
+)
+
+];
+
+
+
+UPet.name=
+pet.name;
+
+
+UPet.damage=
+pet.damage;
+
+
+UPet.level=1;
+
+
+UPet.active=true;
 
 
 
 alert(
 
-"🎉 COMPLETE 🎉\n"+
-"ステージ100達成！"
+"🐾 ペット加入\n"+
+pet.name
 
 );
 
 
 
-game.coin+=100000;
+u_updateUI();
 
 
-saveGameData();
 
+}
+
+
+
+
+
+
+
+// ==========================
+// ペット経験値
+// ==========================
+
+
+function u_petAttack(){
+
+
+
+if(!UPet.active)
+return;
+
+
+
+for(
+let b of UBlocks
+){
+
+
+
+if(b.alive){
+
+
+
+b.hp-=UPet.damage;
+
+
+
+if(b.hp<=0){
+
+
+b.alive=false;
+
+
+U.score+=50;
+
+
+U.coin+=2;
+
+
+}
+
+
+
+break;
 
 
 }
@@ -2422,10 +2884,27 @@ saveGameData();
 
 
 
-setInterval(function(){
+}
 
 
-finalClear();
+
+
+
+
+
+// 自動攻撃
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+u_petAttack();
+
+
+}
+
 
 
 },3000);
@@ -2437,34 +2916,791 @@ finalClear();
 
 
 
-// キーボード操作
-
-document.addEventListener(
-
-"keydown",
-
-function(e){
+// ==========================
+// 研究
+// ==========================
 
 
+function u_research(type){
 
-if(e.key==="ArrowLeft"){
 
 
-paddle.x-=30;
+let cost=500+
+UResearch[type]*500;
+
+
+
+if(U.coin<cost){
+
+
+alert(
+"研究費不足"
+);
+
+
+return;
 
 
 }
 
 
 
-if(e.key==="ArrowRight"){
+U.coin-=cost;
 
 
-paddle.x+=30;
+UResearch[type]++;
+
+
+
+
+
+if(type==="attack"){
+
+
+UBall.power+=2;
 
 
 }
 
+
+
+
+if(type==="defense"){
+
+
+U.hp++;
+
+
+}
+
+
+
+
+
+if(type==="coin"){
+
+
+U.coin+=100;
+
+
+}
+
+
+
+
+
+if(type==="luck"){
+
+
+U.critical+=2;
+
+
+}
+
+
+
+
+
+alert(
+
+"研究完了\n"+
+type+
+" Lv"+
+UResearch[type]
+
+);
+
+
+
+u_updateUI();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let petUI=
+document.createElement("div");
+
+
+
+petUI.innerHTML=
+
+`
+
+<h3>🐾ペット研究</h3>
+
+
+<button onclick="u_summonPet()">
+ペット召喚 2000
+</button>
+
+
+<br>
+
+
+<button onclick="u_research('attack')">
+攻撃研究
+</button>
+
+
+<button onclick="u_research('defense')">
+防御研究
+</button>
+
+
+<button onclick="u_research('coin')">
+コイン研究
+</button>
+
+
+<button onclick="u_research('luck')">
+幸運研究
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+petUI,
+
+UC
+
+);// ==========================
+// 超大作 Part7
+// 転生・ランク・称号
+// ==========================
+
+
+
+const URebirth={
+
+
+count:0,
+
+power:0,
+
+bonus:1
+
+
+};
+
+
+
+
+let URank={
+
+
+name:"初心者",
+
+level:1
+
+
+};
+
+
+
+
+
+let UTitle={
+
+
+current:"新人ブレイカー",
+
+list:[
+
+"新人ブレイカー"
+
+]
+
+
+};
+
+
+
+
+
+
+// ==========================
+// ランク更新
+// ==========================
+
+
+function u_updateRank(){
+
+
+
+let lv=U.level;
+
+
+
+if(lv>=10){
+
+
+URank.name="上級者";
+
+
+}
+
+
+
+if(lv>=50){
+
+
+URank.name="達人";
+
+
+}
+
+
+
+if(lv>=100){
+
+
+URank.name="伝説";
+
+
+}
+
+
+
+if(lv>=500){
+
+
+URank.name="神話級";
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+// ==========================
+// 称号追加
+// ==========================
+
+
+function u_addTitle(name){
+
+
+
+if(
+!UTitle.list.includes(name)
+){
+
+
+
+UTitle.list.push(name);
+
+
+
+alert(
+
+"🏅称号獲得\n"+
+name
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+// ==========================
+// 転生
+// ==========================
+
+
+function u_rebirth(){
+
+
+
+if(U.stage<100){
+
+
+
+alert(
+
+"ステージ100必要"
+
+);
+
+
+
+return;
+
+
+
+}
+
+
+
+
+URebirth.count++;
+
+
+
+URebirth.power+=0.1;
+
+
+
+URebirth.bonus+=0.1;
+
+
+
+// 初期化
+
+U.stage=1;
+
+U.level=1;
+
+U.exp=0;
+
+U.score=0;
+
+U.hp=3;
+
+
+UBall.power=
+
+Math.floor(
+
+UBall.power*
+URebirth.bonus
+
+);
+
+
+
+U.coin=1000;
+
+
+
+u_createStage();
+
+u_resetBall();
+
+
+
+u_addTitle(
+
+"転生者"
+
+);
+
+
+
+alert(
+
+"♻ 転生成功\n"+
+"転生回数 "+
+URebirth.count
+
+);
+
+
+
+u_updateUI();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 永続効果
+// ==========================
+
+
+function u_applyRebirth(){
+
+
+
+UBall.power*=
+
+URebirth.bonus;
+
+
+
+U.critical+=
+
+URebirth.count;
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// エンド報酬
+// ==========================
+
+
+function u_endReward(){
+
+
+
+if(U.stage>=1000){
+
+
+
+U.coin+=1000000;
+
+
+
+u_addTitle(
+
+"宇宙破壊者"
+
+);
+
+
+
+alert(
+
+"🌌 最終領域到達"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let rebirthUI=
+document.createElement("div");
+
+
+
+rebirthUI.innerHTML=
+
+`
+
+<h3>♻ 転生</h3>
+
+
+<button onclick="u_rebirth()">
+転生
+</button>
+
+
+<p>
+ランク:
+${URank.name}
+</p>
+
+
+<p>
+称号:
+${UTitle.current}
+</p>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+rebirthUI,
+
+UC
+
+);
+
+
+
+
+
+
+setInterval(()=>{
+
+
+u_updateRank();
+
+
+u_endReward();
+
+
+
+},5000);// ==========================
+// 超大作 Part8
+// イベント・ランキング
+// ==========================
+
+
+
+const UEvent={
+
+
+active:true,
+
+name:"🔥炎竜祭",
+
+time:86400,
+
+reward:5000
+
+
+};
+
+
+
+
+
+
+const UDaily={
+
+
+destroy:0,
+
+target:200,
+
+clear:false
+
+
+};
+
+
+
+
+
+
+const URanking=[
+
+
+{
+name:"AAA",
+score:999999
+},
+
+
+{
+name:"BBB",
+score:500000
+},
+
+
+{
+name:"CCC",
+score:100000
+}
+
+
+];
+
+
+
+
+
+
+
+// ==========================
+// デイリーミッション
+// ==========================
+
+
+function u_dailyCheck(){
+
+
+
+if(
+
+UDaily.destroy>=UDaily.target
+
+&&
+!UDaily.clear
+
+){
+
+
+
+UDaily.clear=true;
+
+
+
+U.coin+=1000;
+
+
+
+alert(
+
+"🎁 デイリー達成"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// イベント報酬
+// ==========================
+
+
+function u_eventReward(){
+
+
+
+if(!UEvent.active)
+return;
+
+
+
+U.coin+=UEvent.reward;
+
+
+
+alert(
+
+"🎉イベント報酬\n"+
+UEvent.name
+
+);
+
+
+
+UEvent.active=false;
+
+
+
+}
+
+
+
+
+
+
+// ==========================
+// 限定装備
+// ==========================
+
+
+function u_eventEquipment(){
+
+
+
+let item={
+
+
+name:"🔥炎竜の核",
+
+
+rarity:"LIMITED",
+
+
+level:10,
+
+
+power:20
+
+
+
+};
+
+
+
+u_equipBall(item);
+
+
+
+alert(
+
+"限定装備獲得"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ランキング登録
+// ==========================
+
+
+function u_updateRanking(){
+
+
+
+URanking.push({
+
+
+name:"YOU",
+
+
+score:U.score
 
 
 });
@@ -2472,20 +3708,4504 @@ paddle.x+=30;
 
 
 
+URanking.sort(
+
+(a,b)=>b.score-a.score
+
+);
+
+
+
+URanking.splice(10);
+
+
+
+}
 
 
 
 
-// パドル範囲制限
-
-setInterval(function(){
 
 
 
-if(paddle.x<0){
+
+// ==========================
+// 襲撃ボス
+// ==========================
 
 
-paddle.x=0;
+const URaidBoss={
+
+
+active:false,
+
+
+hp:0,
+
+
+name:""
+
+
+};
+
+
+
+
+
+
+
+function u_startRaid(){
+
+
+
+URaidBoss.active=true;
+
+
+URaidBoss.name=
+
+"🌑暗黒王";
+
+
+
+URaidBoss.hp=
+
+10000;
+
+
+
+alert(
+
+"⚠ 襲撃ボス出現"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+function u_raidAttack(){
+
+
+
+if(!URaidBoss.active)
+return;
+
+
+
+URaidBoss.hp-=UBall.power;
+
+
+
+if(URaidBoss.hp<=0){
+
+
+
+URaidBoss.active=false;
+
+
+U.coin+=10000;
+
+
+u_addTitle(
+
+"討伐者"
+
+);
+
+
+
+alert(
+
+"🏆 襲撃ボス撃破"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+u_dailyCheck();
+
+
+u_updateRanking();
+
+
+u_raidAttack();
+
+
+}
+
+
+
+},1000);
+
+
+
+
+
+
+
+// UI
+
+let eventUI=
+document.createElement("div");
+
+
+eventUI.innerHTML=
+
+`
+
+<h3>🎪イベント</h3>
+
+
+<button onclick="u_eventReward()">
+イベント報酬
+</button>
+
+
+<button onclick="u_eventEquipment()">
+限定装備
+</button>
+
+
+<button onclick="u_startRaid()">
+襲撃ボス
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+eventUI,
+
+UC
+
+);// ==========================
+// 超大作 Part9
+// スキン・図鑑・収集
+// ==========================
+
+
+
+const USkin={
+
+
+ball:"white",
+
+paddle:"cyan"
+
+
+};
+
+
+
+
+
+const UCollection={
+
+
+balls:[],
+
+bosses:[],
+
+items:[]
+
+
+};
+
+
+
+
+
+
+const USkinList={
+
+
+ball:[
+
+"white",
+
+"red",
+
+"blue",
+
+"gold",
+
+"rainbow",
+
+"dark"
+
+],
+
+
+paddle:[
+
+"cyan",
+
+"green",
+
+"purple",
+
+"gold"
+
+]
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// スキン変更
+// ==========================
+
+
+function u_changeBallSkin(color){
+
+
+if(
+
+USkinList.ball.includes(color)
+
+){
+
+
+USkin.ball=color;
+
+
+alert(
+
+"ボールスキン変更"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+function u_changePaddleSkin(color){
+
+
+
+if(
+
+USkinList.paddle.includes(color)
+
+){
+
+
+
+USkin.paddle=color;
+
+
+
+alert(
+
+"パドルスキン変更"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 描画スキン反映
+// ==========================
+
+
+
+function u_applySkin(){
+
+
+
+UX.fillStyle=
+USkin.ball;
+
+
+
+UX.beginPath();
+
+
+UX.arc(
+
+UBall.x,
+
+UBall.y,
+
+UBall.r,
+
+0,
+
+Math.PI*2
+
+);
+
+
+
+UX.fill();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// コレクション登録
+// ==========================
+
+
+function u_collect(type,name){
+
+
+
+if(
+!UCollection[type].includes(name)
+){
+
+
+
+UCollection[type].push(name);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 図鑑率
+// ==========================
+
+
+function u_collectionRate(){
+
+
+
+let total=
+
+UCollection.balls.length+
+
+UCollection.bosses.length+
+
+UCollection.items.length;
+
+
+
+return total;
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 実績一覧
+// ==========================
+
+
+function u_showAchievement(){
+
+
+
+alert(
+
+`
+🏆実績
+
+破壊:
+${UAchievement.break}
+
+ボス:
+${UAchievement.boss}
+
+コイン:
+${UAchievement.coin}
+
+ステージ:
+${UAchievement.stage}
+
+`
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 図鑑画面
+// ==========================
+
+
+
+function u_showCollection(){
+
+
+
+alert(
+
+`
+📖図鑑
+
+ボール:
+${UCollection.balls.length}
+
+ボス:
+${UCollection.bosses.length}
+
+アイテム:
+${UCollection.items.length}
+
+`
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// UI
+
+let collectionUI=
+document.createElement("div");
+
+
+
+collectionUI.innerHTML=
+
+`
+
+<h3>📖コレクション</h3>
+
+
+<button onclick="u_showCollection()">
+図鑑
+</button>
+
+
+<button onclick="u_showAchievement()">
+実績
+</button>
+
+
+<br>
+
+
+<button onclick="u_changeBallSkin('gold')">
+金ボール
+</button>
+
+
+<button onclick="u_changeBallSkin('rainbow')">
+虹ボール
+</button>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+collectionUI,
+
+UC
+
+);// ==========================
+// 超大作 Part10
+// ストーリー・マップ・ダンジョン
+// ==========================
+
+
+
+const UStory={
+
+
+chapter:1,
+
+progress:0
+
+
+};
+
+
+
+
+
+const UMap={
+
+
+current:"草原",
+
+unlocked:[
+
+"草原"
+
+]
+
+
+};
+
+
+
+
+
+
+
+const UNPC=[
+
+
+{
+
+name:"研究者レオ",
+
+text:"この世界には強大なブロック魔獣が存在する。"
+
+
+},
+
+
+{
+
+name:"鍛冶屋ミナ",
+
+text:"装備を強化すればさらに強くなれる。"
+
+
+},
+
+
+{
+
+name:"冒険者ゼロ",
+
+text:"未知のダンジョンへ挑め！"
+
+
+}
+
+
+];
+
+
+
+
+
+
+
+
+const UDungeon={
+
+
+active:false,
+
+floor:1,
+
+maxFloor:100
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// ストーリー
+// ==========================
+
+
+function u_nextStory(){
+
+
+
+UStory.progress++;
+
+
+
+if(
+UStory.progress>=5
+){
+
+
+UStory.chapter++;
+
+
+UStory.progress=0;
+
+
+
+alert(
+
+"📖 Chapter "+
+UStory.chapter+
+" 開始"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+function u_talkNPC(id){
+
+
+
+let npc=
+
+UNPC[id];
+
+
+
+if(npc){
+
+
+
+alert(
+
+npc.name+
+"\n\n"+
+npc.text
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// マップ移動
+// ==========================
+
+
+function u_unlockMap(name){
+
+
+
+if(
+!UMap.unlocked.includes(name)
+){
+
+
+
+UMap.unlocked.push(name);
+
+
+
+alert(
+
+"🗺 新エリア解放\n"+
+name
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+function u_moveMap(name){
+
+
+
+if(
+
+UMap.unlocked.includes(name)
+
+){
+
+
+
+UMap.current=name;
+
+
+
+alert(
+
+"移動:\n"+
+name
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ダンジョン
+// ==========================
+
+
+function u_enterDungeon(){
+
+
+
+UDungeon.active=true;
+
+
+UDungeon.floor=1;
+
+
+
+alert(
+
+"🏰 ダンジョン開始"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+function u_dungeonClear(){
+
+
+
+if(!UDungeon.active)
+return;
+
+
+
+U.coin+=
+UDungeon.floor*100;
+
+
+
+U.exp+=
+UDungeon.floor*50;
+
+
+
+UDungeon.floor++;
+
+
+
+if(
+UDungeon.floor>
+UDungeon.maxFloor
+){
+
+
+
+UDungeon.active=false;
+
+
+
+alert(
+
+"🎉 ダンジョン完全制覇"
+
+);
+
+
+
+u_addTitle(
+
+"迷宮攻略者"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// 自動イベント
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+u_nextStory();
+
+
+}
+
+
+
+},60000);
+
+
+
+
+
+
+
+
+// UI追加
+
+let storyUI=
+document.createElement("div");
+
+
+
+storyUI.innerHTML=
+
+`
+
+<h3>📖冒険</h3>
+
+
+<button onclick="u_talkNPC(0)">
+研究者
+</button>
+
+
+<button onclick="u_talkNPC(1)">
+鍛冶屋
+</button>
+
+
+<button onclick="u_talkNPC(2)">
+冒険者
+</button>
+
+
+<br>
+
+
+<button onclick="u_enterDungeon()">
+ダンジョン
+</button>
+
+
+<button onclick="u_dungeonClear()">
+探索
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+storyUI,
+
+UC
+
+);// ==========================
+// 超大作 Part11
+// ギルド・仲間・パーティー
+// ==========================
+
+
+
+const UGuild={
+
+
+name:"無所属",
+
+level:1,
+
+exp:0,
+
+member:0
+
+
+};
+
+
+
+
+
+
+const UFriends=[
+
+
+{
+
+name:"🔥炎剣士",
+
+power:20,
+
+skill:"火炎斬"
+
+},
+
+
+{
+
+name:"❄氷魔導士",
+
+power:15,
+
+skill:"氷結"
+
+},
+
+
+{
+
+name:"⚡雷忍者",
+
+power:25,
+
+skill:"雷撃"
+
+},
+
+
+{
+
+name:"🌿自然戦士",
+
+power:10,
+
+skill:"回復"
+
+}
+
+
+];
+
+
+
+
+
+
+let UParty=[];
+
+
+
+
+
+
+
+
+// ==========================
+// ギルド作成
+// ==========================
+
+
+function u_createGuild(){
+
+
+
+if(UGuild.name!=="無所属"){
+
+
+alert(
+"すでに所属しています"
+);
+
+
+return;
+
+
+}
+
+
+
+if(U.coin<5000){
+
+
+alert(
+"コイン不足"
+);
+
+
+return;
+
+
+}
+
+
+
+U.coin-=5000;
+
+
+
+UGuild.name=
+"ブロック討伐隊";
+
+
+UGuild.level=1;
+
+
+alert(
+
+"🏰ギルド作成"
+
+);
+
+
+
+u_updateUI();
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 仲間加入
+// ==========================
+
+
+function u_recruitFriend(){
+
+
+
+let friend=
+
+UFriends[
+
+Math.floor(
+
+Math.random()*
+UFriends.length
+
+)
+
+];
+
+
+
+if(UParty.length>=4){
+
+
+alert(
+"パーティ満員"
+);
+
+
+return;
+
+
+}
+
+
+
+UParty.push(friend);
+
+
+
+alert(
+
+"仲間加入\n"+
+friend.name
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// パーティ攻撃
+// ==========================
+
+
+function u_partyAttack(){
+
+
+
+let damage=0;
+
+
+
+for(
+let p of UParty
+){
+
+
+
+damage+=p.power;
+
+
+
+}
+
+
+
+for(
+let b of UBlocks
+){
+
+
+
+if(b.alive){
+
+
+
+b.hp-=damage;
+
+
+
+if(b.hp<=0){
+
+
+b.alive=false;
+
+
+U.score+=100;
+
+
+U.coin+=5;
+
+
+}
+
+
+
+break;
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ギルド経験値
+// ==========================
+
+
+function u_guildExp(){
+
+
+
+UGuild.exp++;
+
+
+
+if(
+
+UGuild.exp>=100
+
+){
+
+
+
+UGuild.level++;
+
+
+UGuild.exp=0;
+
+
+
+alert(
+
+"🏰ギルドLv "+
+UGuild.level
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// 自動仲間攻撃
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+u_partyAttack();
+
+
+u_guildExp();
+
+
+}
+
+
+
+},5000);
+
+
+
+
+
+
+
+// UI
+
+let guildUI=
+document.createElement("div");
+
+
+
+guildUI.innerHTML=
+
+`
+
+<h3>🏰ギルド</h3>
+
+
+<button onclick="u_createGuild()">
+ギルド作成
+</button>
+
+
+<button onclick="u_recruitFriend()">
+仲間募集
+</button>
+
+
+<p>
+ギルド:
+${UGuild.name}
+</p>
+
+
+<p>
+仲間:
+${UParty.length}/4
+</p>
+
+`;
+
+
+
+document.body.insertBefore(
+
+guildUI,
+
+UC
+
+);// ==========================
+// 超大作 Part12
+// 無限タワー・チャレンジ
+// ==========================
+
+
+
+const UTower={
+
+
+floor:1,
+
+maxFloor:1000,
+
+active:false,
+
+score:0
+
+
+};
+
+
+
+
+
+const UChallenge={
+
+
+mode:"normal",
+
+multiplier:1,
+
+
+clear:0
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// タワー開始
+// ==========================
+
+
+function u_startTower(){
+
+
+
+UTower.active=true;
+
+
+UTower.floor=1;
+
+
+UTower.score=0;
+
+
+
+alert(
+
+"🏰 無限タワー開始"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 階層生成
+// ==========================
+
+
+function u_generateTower(){
+
+
+
+if(!UTower.active)
+return;
+
+
+
+UBlocks=[];
+
+
+
+let count=
+
+5+
+Math.floor(
+UTower.floor/10
+);
+
+
+
+for(
+let i=0;
+i<count;
+i++
+){
+
+
+
+UBlocks.push({
+
+
+x:10+
+(i%8)*43,
+
+
+y:40+
+Math.floor(i/8)*25,
+
+
+w:38,
+
+
+h:18,
+
+
+hp:
+
+10+
+UTower.floor,
+
+
+alive:true,
+
+
+type:"tower"
+
+
+
+});
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 階クリア
+// ==========================
+
+
+function u_clearTower(){
+
+
+
+if(!UTower.active)
+return;
+
+
+
+let alive=false;
+
+
+
+for(
+let b of UBlocks
+){
+
+
+
+if(b.alive){
+
+
+alive=true;
+
+
+}
+
+
+
+}
+
+
+
+if(!alive){
+
+
+
+UTower.floor++;
+
+
+
+UTower.score+=
+
+UTower.floor*100;
+
+
+
+U.coin+=
+
+UTower.floor*10;
+
+
+
+if(
+
+UTower.floor>UTower.maxFloor
+
+){
+
+
+
+alert(
+
+"🌌 タワー完全制覇"
+
+);
+
+
+
+u_addTitle(
+
+"無限突破者"
+
+);
+
+
+
+UTower.active=false;
+
+
+
+return;
+
+
+
+}
+
+
+
+u_generateTower();
+
+
+
+alert(
+
+"階層 "+
+UTower.floor
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// チャレンジモード
+// ==========================
+
+
+function u_changeChallenge(mode){
+
+
+
+UChallenge.mode=mode;
+
+
+
+if(mode==="hard"){
+
+
+UChallenge.multiplier=2;
+
+
+}
+
+
+if(mode==="hell"){
+
+
+UChallenge.multiplier=5;
+
+
+}
+
+
+if(mode==="god"){
+
+
+UChallenge.multiplier=10;
+
+
+}
+
+
+
+alert(
+
+"難易度変更\n"+
+mode
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// スコア計算
+// ==========================
+
+
+function u_getRankScore(){
+
+
+
+return Math.floor(
+
+
+U.score*
+
+UChallenge.multiplier
+
++
+
+UTower.score
+
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 報酬
+// ==========================
+
+
+function u_challengeReward(){
+
+
+
+let reward=
+
+u_getRankScore()/10;
+
+
+
+U.coin+=
+
+Math.floor(reward);
+
+
+
+alert(
+
+"🏆報酬 "+
+Math.floor(reward)+
+"コイン"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// UI
+
+let towerUI=
+document.createElement("div");
+
+
+
+towerUI.innerHTML=
+
+`
+
+<h3>🏰無限タワー</h3>
+
+
+<button onclick="u_startTower()">
+開始
+</button>
+
+
+<button onclick="u_generateTower()">
+次階生成
+</button>
+
+
+<button onclick="u_clearTower()">
+攻略
+</button>
+
+
+<br>
+
+
+<button onclick="u_changeChallenge('hard')">
+HARD
+</button>
+
+
+<button onclick="u_changeChallenge('hell')">
+HELL
+</button>
+
+
+<button onclick="u_changeChallenge('god')">
+GOD
+</button>
+
+
+<br>
+
+
+<button onclick="u_challengeReward()">
+報酬
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+towerUI,
+
+UC
+
+);// ==========================
+// 超大作 Part13
+// 職業・スキルツリー
+// ==========================
+
+
+
+const UJob={
+
+
+name:"ブレイカー",
+
+level:1,
+
+
+skillPoint:0
+
+
+};
+
+
+
+
+
+
+const UStatus={
+
+
+attack:0,
+
+speed:0,
+
+luck:0,
+
+defense:0
+
+
+};
+
+
+
+
+
+
+
+const UJobs={
+
+
+breaker:{
+
+
+name:"ブレイカー",
+
+bonus:"攻撃力上昇",
+
+attack:10
+
+
+},
+
+
+wizard:{
+
+
+name:"ウィザード",
+
+bonus:"スキル強化",
+
+attack:5
+
+
+},
+
+
+guardian:{
+
+
+name:"ガーディアン",
+
+bonus:"防御強化",
+
+attack:3
+
+
+},
+
+
+hunter:{
+
+
+name:"ハンター",
+
+bonus:"クリティカル",
+
+attack:7
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+// ==========================
+// 転職
+// ==========================
+
+
+function u_changeJob(job){
+
+
+
+let data=
+
+UJobs[job];
+
+
+
+if(!data)
+return;
+
+
+
+UJob.name=
+
+data.name;
+
+
+
+UBall.power+=
+
+data.attack;
+
+
+
+alert(
+
+"職業変更\n"+
+data.name+
+"\n"+
+data.bonus
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ステータス振り分け
+// ==========================
+
+
+function u_addStatus(type){
+
+
+
+if(UJob.skillPoint<=0){
+
+
+alert(
+
+"ポイント不足"
+
+);
+
+
+return;
+
+
+}
+
+
+
+if(!UStatus[type]&&UStatus[type]!==0)
+return;
+
+
+
+UStatus[type]++;
+
+
+UJob.skillPoint--;
+
+
+
+if(type==="attack"){
+
+
+
+UBall.power+=2;
+
+
+
+}
+
+
+
+if(type==="speed"){
+
+
+
+UBall.dx*=1.05;
+
+UBall.dy*=1.05;
+
+
+
+}
+
+
+
+if(type==="luck"){
+
+
+
+U.critical+=1;
+
+
+
+}
+
+
+
+if(type==="defense"){
+
+
+
+U.hp++;
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// スキルポイント獲得
+// ==========================
+
+
+function u_gainSkillPoint(){
+
+
+
+UJob.skillPoint++;
+
+
+
+alert(
+
+"✨スキルポイント獲得"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// スキルツリー
+// ==========================
+
+
+const USkillTree={
+
+
+power:{
+
+
+level:0,
+
+max:10
+
+
+},
+
+
+combo:{
+
+
+level:0,
+
+max:10
+
+
+},
+
+
+magic:{
+
+
+level:0,
+
+max:10
+
+
+},
+
+
+survival:{
+
+
+level:0,
+
+max:10
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+function u_learnSkill(name){
+
+
+
+let skill=
+
+USkillTree[name];
+
+
+
+if(!skill)
+return;
+
+
+
+if(
+
+skill.level>=skill.max
+
+){
+
+
+alert(
+"最大"
+);
+
+
+return;
+
+
+}
+
+
+
+if(UJob.skillPoint<=0){
+
+
+alert(
+"ポイント不足"
+);
+
+
+return;
+
+
+}
+
+
+
+skill.level++;
+
+
+UJob.skillPoint--;
+
+
+
+if(name==="power"){
+
+
+UBall.power+=5;
+
+
+}
+
+
+
+if(name==="combo"){
+
+
+U.combo++;
+
+
+}
+
+
+
+if(name==="magic"){
+
+
+U.mana+=10;
+
+
+}
+
+
+
+if(name==="survival"){
+
+
+U.hp++;
+
+
+}
+
+
+
+alert(
+
+name+
+" Lv"+
+skill.level
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// UI
+
+let jobUI=
+document.createElement("div");
+
+
+
+jobUI.innerHTML=
+
+`
+
+<h3>⚔ 職業</h3>
+
+
+<button onclick="u_changeJob('breaker')">
+ブレイカー
+</button>
+
+
+<button onclick="u_changeJob('wizard')">
+魔法使い
+</button>
+
+
+<button onclick="u_changeJob('guardian')">
+守護者
+</button>
+
+
+<button onclick="u_changeJob('hunter')">
+狩人
+</button>
+
+
+<br>
+
+
+<button onclick="u_gainSkillPoint()">
+SP獲得
+</button>
+
+
+<br>
+
+
+<button onclick="u_learnSkill('power')">
+攻撃スキル
+</button>
+
+
+<button onclick="u_learnSkill('combo')">
+コンボ
+</button>
+
+
+<button onclick="u_learnSkill('magic')">
+魔法
+</button>
+
+
+<button onclick="u_learnSkill('survival')">
+生存
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+jobUI,
+
+UC
+
+);// ==========================
+// 超大作 Part14
+// クラフト・錬金システム
+// ==========================
+
+
+
+const UMaterial={
+
+
+iron:0,
+
+crystal:0,
+
+dragon:0,
+
+dark:0,
+
+star:0
+
+
+};
+
+
+
+
+
+const UCraft={
+
+
+count:0,
+
+
+legend:false
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// 素材獲得
+// ==========================
+
+
+function u_getMaterial(){
+
+
+
+let r=
+Math.random();
+
+
+
+if(r<0.5){
+
+
+UMaterial.iron++;
+
+
+}
+
+
+
+else if(r<0.75){
+
+
+UMaterial.crystal++;
+
+
+}
+
+
+
+else if(r<0.9){
+
+
+UMaterial.dragon++;
+
+
+}
+
+
+
+else if(r<0.98){
+
+
+UMaterial.dark++;
+
+
+}
+
+
+
+else{
+
+
+UMaterial.star++;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 素材表示
+// ==========================
+
+
+function u_showMaterial(){
+
+
+
+alert(
+
+`
+🔨素材
+
+鉄:
+${UMaterial.iron}
+
+クリスタル:
+${UMaterial.crystal}
+
+竜素材:
+${UMaterial.dragon}
+
+暗黒:
+${UMaterial.dark}
+
+星:
+${UMaterial.star}
+
+`
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 装備制作
+// ==========================
+
+
+function u_craftWeapon(){
+
+
+
+if(
+
+UMaterial.iron<20 ||
+
+UMaterial.crystal<10
+
+){
+
+
+alert(
+"素材不足"
+);
+
+
+return;
+
+
+}
+
+
+
+UMaterial.iron-=20;
+
+
+UMaterial.crystal-=10;
+
+
+
+let item={
+
+
+
+name:"クリスタルブレイカー",
+
+
+rarity:"SR",
+
+
+level:1,
+
+
+power:30
+
+
+
+};
+
+
+
+u_equipBall(item);
+
+
+
+UCraft.count++;
+
+
+
+alert(
+
+"⚒ 装備制作成功"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// 伝説装備
+// ==========================
+
+
+function u_makeLegend(){
+
+
+
+if(
+
+UMaterial.dragon<10 ||
+
+UMaterial.star<5
+
+){
+
+
+alert(
+
+"伝説素材不足"
+
+);
+
+
+
+return;
+
+
+}
+
+
+
+UMaterial.dragon-=10;
+
+
+UMaterial.star-=5;
+
+
+
+let item={
+
+
+
+name:"🌌星竜破壊球",
+
+
+rarity:"UR",
+
+
+level:10,
+
+
+power:100
+
+
+
+};
+
+
+
+u_equipBall(item);
+
+
+
+UCraft.legend=true;
+
+
+
+u_addTitle(
+
+"伝説鍛冶師"
+
+);
+
+
+
+alert(
+
+"✨伝説装備完成"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 素材自動入手
+// ==========================
+
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+u_getMaterial();
+
+
+}
+
+
+
+},10000);
+
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let craftUI=
+document.createElement("div");
+
+
+
+craftUI.innerHTML=
+
+`
+
+<h3>🔨クラフト</h3>
+
+
+<button onclick="u_showMaterial()">
+素材確認
+</button>
+
+
+<button onclick="u_craftWeapon()">
+SR装備制作
+</button>
+
+
+<button onclick="u_makeLegend()">
+UR装備制作
+</button>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+craftUI,
+
+UC
+
+);// ==========================
+// 超大作 Part15
+// ペット進化・図鑑・捕獲
+// ==========================
+
+
+
+const UMonsterBook={
+
+
+normal:0,
+
+boss:0,
+
+rare:0
+
+
+};
+
+
+
+
+
+const UPetEvolution={
+
+
+level:1,
+
+exp:0,
+
+skill:"なし"
+
+
+};
+
+
+
+
+
+
+
+const UCapture={
+
+
+success:0,
+
+total:0
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// ペット経験値
+// ==========================
+
+
+function u_petExp(value){
+
+
+
+if(!UPet.active)
+return;
+
+
+
+UPetEvolution.exp+=value;
+
+
+
+if(
+
+UPetEvolution.exp>=
+UPetEvolution.level*100
+
+){
+
+
+
+UPetEvolution.level++;
+
+
+UPetEvolution.exp=0;
+
+
+
+UPet.damage*=1.5;
+
+
+
+alert(
+
+"🐾ペット進化\nLv"+
+UPetEvolution.level
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// ペットスキル
+// ==========================
+
+
+const UPetSkills={
+
+
+fire:"全体炎攻撃",
+
+ice:"敵停止",
+
+thunder:"雷連撃",
+
+heal:"HP回復"
+
+
+};
+
+
+
+
+
+
+
+function u_petSkill(skill){
+
+
+
+if(!UPet.active)
+return;
+
+
+
+UPetEvolution.skill=
+UPetSkills[skill];
+
+
+
+if(skill==="fire"){
+
+
+
+for(let b of UBlocks){
+
+b.hp--;
+
+}
+
+
+
+}
+
+
+
+if(skill==="ice"){
+
+
+UBall.dx*=0.5;
+
+UBall.dy*=0.5;
+
+
+
+setTimeout(()=>{
+
+
+UBall.dx*=2;
+
+UBall.dy*=2;
+
+
+},3000);
+
+
+
+}
+
+
+
+if(skill==="thunder"){
+
+
+
+U.score+=1000;
+
+
+
+}
+
+
+
+if(skill==="heal"){
+
+
+U.hp++;
+
+
+}
+
+
+
+alert(
+
+"🐾"+
+UPetSkills[skill]
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// モンスター捕獲
+// ==========================
+
+
+function u_capture(){
+
+
+
+UCapture.total++;
+
+
+
+let chance=
+
+Math.random();
+
+
+
+if(chance<0.3){
+
+
+
+UCapture.success++;
+
+
+
+UMonsterBook.rare++;
+
+
+
+let item={
+
+
+name:"捕獲モンスター強化球",
+
+
+rarity:"SR",
+
+
+level:1,
+
+
+power:40
+
+
+
+};
+
+
+
+u_equipBall(item);
+
+
+
+alert(
+
+"🎯 捕獲成功"
+
+);
+
+
+
+}
+
+else{
+
+
+alert(
+
+"捕獲失敗"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 図鑑登録
+// ==========================
+
+
+function u_registerMonster(type){
+
+
+
+UMonsterBook[type]++;
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// レイド強化
+// ==========================
+
+
+function u_upgradeRaid(){
+
+
+
+if(U.coin<10000){
+
+
+alert(
+
+"コイン不足"
+
+);
+
+
+return;
+
+
+}
+
+
+
+U.coin-=10000;
+
+
+
+URaidBoss.hp*=2;
+
+
+
+alert(
+
+"🌑レイド強化"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let petAdvanceUI=
+document.createElement("div");
+
+
+
+petAdvanceUI.innerHTML=
+
+`
+
+<h3>🐾ペット進化</h3>
+
+
+<button onclick="u_petSkill('fire')">
+炎スキル
+</button>
+
+
+<button onclick="u_petSkill('ice')">
+氷スキル
+</button>
+
+
+<button onclick="u_petSkill('thunder')">
+雷スキル
+</button>
+
+
+<button onclick="u_petSkill('heal')">
+回復
+</button>
+
+
+<br>
+
+
+<button onclick="u_capture()">
+モンスター捕獲
+</button>
+
+
+<button onclick="u_upgradeRaid()">
+レイド強化
+</button>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+petAdvanceUI,
+
+UC
+
+);// ==========================
+// 超大作 Part16
+// アリーナ・シーズン
+// ==========================
+
+
+
+const UArena={
+
+
+rank:1,
+
+rating:1000,
+
+win:0,
+
+lose:0
+
+
+};
+
+
+
+
+
+
+const USeason={
+
+
+number:1,
+
+point:0,
+
+max:10000
+
+
+};
+
+
+
+
+
+
+const UBattlePass={
+
+
+level:1,
+
+exp:0,
+
+premium:false
+
+
+};
+
+
+
+
+
+
+
+
+// ==========================
+// アリーナ対戦
+// ==========================
+
+
+function u_arenaBattle(){
+
+
+
+let enemyPower=
+
+Math.floor(
+
+Math.random()*500
+
+)+100;
+
+
+
+let myPower=
+
+UBall.power+
+
+U.level*10;
+
+
+
+if(myPower>=enemyPower){
+
+
+
+UArena.win++;
+
+
+UArena.rating+=50;
+
+
+U.coin+=300;
+
+
+
+USeason.point+=100;
+
+
+
+alert(
+
+"⚔勝利！\n"+
+"レート +50"
+
+);
+
+
+
+}
+
+else{
+
+
+UArena.lose++;
+
+
+UArena.rating-=30;
+
+
+
+alert(
+
+"敗北"
+
+);
+
+
+
+}
+
+
+
+u_updateUI();
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// ランク更新
+// ==========================
+
+
+function u_updateArenaRank(){
+
+
+
+if(UArena.rating>=2000){
+
+
+UArena.rank=2;
+
+
+}
+
+
+
+if(UArena.rating>=3000){
+
+
+UArena.rank=3;
+
+
+}
+
+
+
+if(UArena.rating>=5000){
+
+
+UArena.rank=4;
+
+
+}
+
+
+
+if(UArena.rating>=10000){
+
+
+UArena.rank=5;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// シーズン報酬
+// ==========================
+
+
+function u_claimSeason(){
+
+
+
+if(
+
+USeason.point>=USeason.max
+
+){
+
+
+
+USeason.point=0;
+
+
+USeason.number++;
+
+
+
+U.coin+=10000;
+
+
+
+u_addTitle(
+
+"シーズン覇者"
+
+);
+
+
+
+alert(
+
+"🎁シーズン報酬獲得"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// バトルパス経験値
+// ==========================
+
+
+function u_addBattleExp(value){
+
+
+
+UBattlePass.exp+=value;
+
+
+
+if(
+
+UBattlePass.exp>=
+UBattlePass.level*100
+
+){
+
+
+
+UBattlePass.level++;
+
+
+UBattlePass.exp=0;
+
+
+
+U.coin+=500;
+
+
+
+alert(
+
+"🎫バトルパス Lv "+
+UBattlePass.level
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ==========================
+// プレミアム化
+// ==========================
+
+
+function u_buyPremium(){
+
+
+
+if(U.coin<5000){
+
+
+alert(
+"コイン不足"
+);
+
+
+return;
+
+
+}
+
+
+
+U.coin-=5000;
+
+
+UBattlePass.premium=true;
+
+
+
+alert(
+
+"✨プレミアム解放"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let arenaUI=
+document.createElement("div");
+
+
+
+arenaUI.innerHTML=
+
+`
+
+<h3>⚔ アリーナ</h3>
+
+
+<button onclick="u_arenaBattle()">
+対戦
+</button>
+
+
+<button onclick="u_claimSeason()">
+シーズン報酬
+</button>
+
+
+<button onclick="u_buyPremium()">
+プレミアム
+</button>
+
+
+<p>
+Rank:
+${UArena.rank}
+</p>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+arenaUI,
+
+UC
+
+);
+
+
+
+
+
+
+
+setInterval(()=>{
+
+
+u_updateArenaRank();
+
+
+
+},5000);// ==========================
+// 超大作 Part17
+// 天候・イベント・宝箱
+// ==========================
+
+
+
+const UWorldEffect={
+
+
+weather:"晴れ",
+
+time:"昼",
+
+bonus:1
+
+
+};
+
+
+
+
+
+
+const URandomEvent={
+
+
+active:false,
+
+name:""
+
+
+};
+
+
+
+
+
+
+
+const UTreasure={
+
+
+found:0,
+
+rare:0
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// 天候変更
+// ==========================
+
+
+function u_changeWeather(){
+
+
+
+let list=[
+
+"晴れ",
+
+"雨",
+
+"雷雨",
+
+"雪",
+
+"流星"
+
+];
+
+
+
+UWorldEffect.weather=
+
+list[
+
+Math.floor(
+
+Math.random()*list.length
+
+)
+
+];
+
+
+
+if(UWorldEffect.weather==="流星"){
+
+
+UWorldEffect.bonus=2;
+
+
+}
+
+else{
+
+
+UWorldEffect.bonus=1;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 昼夜
+// ==========================
+
+
+function u_changeTime(){
+
+
+
+if(UWorldEffect.time==="昼"){
+
+
+
+UWorldEffect.time="夜";
+
+
+}
+
+else{
+
+
+UWorldEffect.time="昼";
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 宝箱
+// ==========================
+
+
+function u_openTreasure(){
+
+
+
+let r=
+
+Math.random();
+
+
+
+UTreasure.found++;
+
+
+
+if(r<0.05){
+
+
+
+UTreasure.rare++;
+
+
+
+let item={
+
+
+name:"🌟神秘の宝箱装備",
+
+
+rarity:"UR",
+
+
+level:5,
+
+
+power:80
+
+
+
+};
+
+
+
+u_equipBall(item);
+
+
+
+alert(
+
+"✨超レア宝箱！"
+
+);
+
+
+
+}
+
+else{
+
+
+
+let reward=
+
+Math.floor(
+
+Math.random()*1000
+
+)+100;
+
+
+
+U.coin+=reward;
+
+
+
+alert(
+
+"宝箱\n"+
+reward+
+"コイン"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ランダムイベント
+// ==========================
+
+
+function u_randomEvent(){
+
+
+
+let events=[
+
+
+"隕石が落下した",
+
+"妖精が現れた",
+
+"古代遺跡発見",
+
+"魔物襲撃",
+
+"幸運の日"
+
+
+];
+
+
+
+URandomEvent.active=true;
+
+
+
+URandomEvent.name=
+
+events[
+
+Math.floor(
+
+Math.random()*events.length
+
+)
+
+];
+
+
+
+alert(
+
+"⚡イベント\n"+
+URandomEvent.name
+
+);
+
+
+
+
+
+if(
+URandomEvent.name==="幸運の日"
+){
+
+
+UWorldEffect.bonus=3;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 秘密ダンジョン
+// ==========================
+
+
+function u_secretDungeon(){
+
+
+
+if(
+
+UTreasure.rare<3
+
+){
+
+
+
+alert(
+
+"条件不足"
+
+);
+
+
+
+return;
+
+
+}
+
+
+
+UDungeon.active=true;
+
+
+UDungeon.floor=500;
+
+
+
+alert(
+
+"🌌秘密ダンジョン解放"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 自動発生
+// ==========================
+
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+
+u_changeWeather();
+
+
+
+u_changeTime();
+
+
+
+if(Math.random()<0.2){
+
+
+u_randomEvent();
+
+
+}
+
+
+
+}
+
+
+
+},30000);
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let event17UI=
+document.createElement("div");
+
+
+
+event17UI.innerHTML=
+
+`
+
+<h3>🌎世界イベント</h3>
+
+
+<button onclick="u_openTreasure()">
+宝箱
+</button>
+
+
+<button onclick="u_randomEvent()">
+イベント
+</button>
+
+
+<button onclick="u_secretDungeon()">
+秘密ダンジョン
+</button>
+
+
+<p>
+天候:
+${UWorldEffect.weather}
+</p>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+event17UI,
+
+UC
+
+);// ==========================
+// 超大作 Part18
+// AI敵・成長システム
+// ==========================
+
+
+
+const UEnemyAI={
+
+
+level:1,
+
+rage:0,
+
+difficulty:1
+
+
+};
+
+
+
+
+
+
+
+const UBossAI={
+
+
+pattern:0,
+
+speed:1,
+
+rage:false
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// 敵成長
+// ==========================
+
+
+function u_enemyGrow(){
+
+
+
+UEnemyAI.level++;
+
+
+
+UEnemyAI.difficulty=
+
+1+
+U.stage/10;
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// AIブロック生成
+// ==========================
+
+
+function u_createAIBlock(x,y){
+
+
+
+let type=
+
+Math.floor(
+
+Math.random()*4
+
+);
+
+
+
+return {
+
+
+x:x,
+
+y:y,
+
+w:38,
+
+h:18,
+
+
+hp:
+
+5+
+UEnemyAI.level*2,
+
+
+alive:true,
+
+
+ai:type,
+
+
+move:0
+
+
+
+};
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// AI行動
+// ==========================
+
+
+function u_enemyAI(){
+
+
+
+for(
+let b of UBlocks
+){
+
+
+
+if(!b.alive)
+continue;
+
+
+
+if(b.ai===0){
+
+
+
+// 移動敵
+
+
+b.x+=Math.sin(Date.now()/500)*2;
+
+
+
+}
+
+
+
+if(b.ai===1){
+
+
+
+// 回復敵
+
+
+if(Math.random()<0.01){
+
+
+b.hp++;
+
+
+}
+
+
+
+}
+
+
+
+if(b.ai===2){
+
+
+
+// 強化敵
+
+
+b.hp+=0.01;
+
+
+
+}
+
+
+
+if(b.ai===3){
+
+
+
+// 狂暴化
+
+
+if(UEnemyAI.rage){
+
+
+b.hp*=1.1;
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ボスAI
+// ==========================
+
+
+function u_bossAI(){
+
+
+
+if(!UBoss.active)
+return;
+
+
+
+UBossAI.pattern++;
+
+
+
+if(
+UBossAI.pattern%100===0
+){
+
+
+
+UBossAI.rage=true;
+
+
+
+alert(
+
+"🔥ボス怒り状態"
+
+);
+
 
 
 }
@@ -2493,16 +8213,1452 @@ paddle.x=0;
 
 
 if(
-paddle.x+paddle.w>360
+UBossAI.rage
 ){
 
 
-paddle.x=
-360-paddle.w;
+
+UBoss.hp-=0;
+
+
+
+UBall.dx*=1.01;
+
+UBall.dy*=1.01;
+
 
 
 }
 
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 難易度調整
+// ==========================
+
+
+function u_dynamicDifficulty(){
+
+
+
+if(U.score>100000){
+
+
+
+UEnemyAI.difficulty+=0.5;
+
+
+
+}
+
+
+
+if(U.stage>50){
+
+
+
+UEnemyAI.rage=1;
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 強化ステージ生成
+// ==========================
+
+
+function u_generateAdvancedStage(){
+
+
+
+UBlocks=[];
+
+
+
+let count=
+
+20+
+UEnemyAI.level;
+
+
+
+for(
+let i=0;
+i<count;
+i++
+){
+
+
+
+UBlocks.push(
+
+u_createAIBlock(
+
+10+(i%8)*43,
+
+40+
+
+Math.floor(i/8)*25
+
+)
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 自動処理
+// ==========================
+
+
+setInterval(()=>{
+
+
+if(U.running){
+
+
+
+u_enemyAI();
+
+
+u_bossAI();
+
+
+u_dynamicDifficulty();
+
+
+}
+
+
+
+},1000);
+
+
+
+
+
+
+
+// UI
+
+let aiUI=
+document.createElement("div");
+
+
+
+aiUI.innerHTML=
+
+`
+
+<h3>🤖AIシステム</h3>
+
+
+<p>
+敵Lv:
+${UEnemyAI.level}
+</p>
+
+
+<button onclick="u_enemyGrow()">
+敵強化
+</button>
+
+
+<button onclick="u_generateAdvancedStage()">
+AIステージ生成
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+aiUI,
+
+UC
+
+);// ==========================
+// 超大作 Part19
+// インベントリ・装備進化
+// ==========================
+
+
+
+const UInventory={
+
+
+items:[],
+
+
+max:100
+
+
+};
+
+
+
+
+
+
+
+const UEquipSlot={
+
+
+weapon:null,
+
+
+armor:null,
+
+
+core:null
+
+
+};
+
+
+
+
+
+
+
+const URarityEvolution={
+
+
+N:{
+
+next:"R",
+
+cost:1000
+
+},
+
+
+R:{
+
+next:"SR",
+
+cost:3000
+
+},
+
+
+SR:{
+
+next:"SSR",
+
+cost:10000
+
+},
+
+
+SSR:{
+
+next:"UR",
+
+cost:50000
+
+},
+
+
+UR:{
+
+next:"MAX",
+
+cost:100000
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+// ==========================
+// アイテム追加
+// ==========================
+
+
+function u_addItem(item){
+
+
+
+if(
+
+UInventory.items.length>=
+UInventory.max
+
+){
+
+
+
+alert(
+
+"倉庫満杯"
+
+);
+
+
+
+return;
+
+
+}
+
+
+
+UInventory.items.push(item);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 装備装着
+// ==========================
+
+
+function u_equipItem(index){
+
+
+
+let item=
+
+UInventory.items[index];
+
+
+
+if(!item)
+return;
+
+
+
+UEquipSlot.weapon=item;
+
+
+
+UBall.power=
+
+item.power*
+item.level;
+
+
+
+alert(
+
+"装備:\n"+
+item.name
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 売却
+// ==========================
+
+
+function u_sellItem(index){
+
+
+
+let item=
+
+UInventory.items[index];
+
+
+
+if(!item)
+return;
+
+
+
+let price=
+
+item.power*
+item.level*
+10;
+
+
+
+U.coin+=price;
+
+
+
+UInventory.items.splice(
+
+index,
+
+1
+
+);
+
+
+
+alert(
+
+"売却 "+
+price+
+"コイン"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// レア進化
+// ==========================
+
+
+function u_evolveItem(index){
+
+
+
+let item=
+
+UInventory.items[index];
+
+
+
+if(!item)
+return;
+
+
+
+let evo=
+
+URarityEvolution[item.rarity];
+
+
+
+if(!evo){
+
+
+alert(
+"進化不可"
+);
+
+
+return;
+
+
+}
+
+
+
+if(U.coin<evo.cost){
+
+
+alert(
+"コイン不足"
+);
+
+
+return;
+
+
+}
+
+
+
+U.coin-=evo.cost;
+
+
+
+item.rarity=evo.next;
+
+
+
+item.power*=2;
+
+
+
+item.level=1;
+
+
+
+alert(
+
+"✨進化成功\n"+
+item.rarity
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 限界突破
+// ==========================
+
+
+function u_limitBreak(index){
+
+
+
+let item=
+
+UInventory.items[index];
+
+
+
+if(!item)
+return;
+
+
+
+if(item.level>=100){
+
+
+alert(
+"最大"
+);
+
+
+return;
+
+
+}
+
+
+
+item.level++;
+
+
+
+item.power*=1.1;
+
+
+
+alert(
+
+"限界突破 Lv"+
+item.level
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// UI
+// ==========================
+
+
+let inventoryUI=
+document.createElement("div");
+
+
+
+inventoryUI.innerHTML=
+
+`
+
+<h3>🎒インベントリ</h3>
+
+
+<button onclick="u_equipItem(0)">
+1番装備
+</button>
+
+
+<button onclick="u_sellItem(0)">
+1番売却
+</button>
+
+
+<button onclick="u_evolveItem(0)">
+1番進化
+</button>
+
+
+<button onclick="u_limitBreak(0)">
+1番突破
+</button>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+inventoryUI,
+
+UC
+
+);// ==========================
+// 超大作 Part20
+// 神器・宇宙・最終章
+// ==========================
+
+
+
+const UFinal={
+
+
+unlocked:false,
+
+boss:false,
+
+clear:false
+
+
+};
+
+
+
+
+
+const UArtifact={
+
+
+name:"なし",
+
+power:0,
+
+level:0
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// 宇宙ワールド解放
+// ==========================
+
+
+function u_unlockUniverse(){
+
+
+
+if(U.stage<500){
+
+
+alert(
+
+"ステージ500必要"
+
+);
+
+
+return;
+
+
+}
+
+
+
+UFinal.unlocked=true;
+
+
+U.world=6;
+
+
+
+alert(
+
+"🌌宇宙ワールド解放"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 神器作成
+// ==========================
+
+
+function u_createArtifact(){
+
+
+
+if(
+
+UMaterial.star<100 ||
+
+UMaterial.dark<50
+
+){
+
+
+
+alert(
+
+"神器素材不足"
+
+);
+
+
+
+return;
+
+
+}
+
+
+
+UMaterial.star-=100;
+
+UMaterial.dark-=50;
+
+
+
+UArtifact.name=
+
+"🌌創世破壊神器";
+
+
+UArtifact.power=1000;
+
+
+UArtifact.level=1;
+
+
+
+UBall.power+=1000;
+
+
+
+u_addTitle(
+
+"神器保持者"
+
+);
+
+
+
+alert(
+
+"✨神器完成"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 最終ボス
+// ==========================
+
+
+const UFinalBoss={
+
+
+hp:1000000,
+
+active:false,
+
+name:"終焉のブロック神"
+
+
+};
+
+
+
+
+
+
+
+
+function u_startFinalBoss(){
+
+
+
+if(!UFinal.unlocked){
+
+
+alert(
+
+"宇宙解放が必要"
+
+);
+
+
+return;
+
+
+}
+
+
+
+UFinalBoss.active=true;
+
+
+
+alert(
+
+"⚠ 最終ボス出現\n"+
+UFinalBoss.name
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+function u_attackFinalBoss(){
+
+
+
+if(!UFinalBoss.active)
+return;
+
+
+
+UFinalBoss.hp-=
+
+UBall.power*10;
+
+
+
+if(UFinalBoss.hp<=0){
+
+
+
+UFinalBoss.active=false;
+
+
+UFinal.clear=true;
+
+
+
+U.coin+=1000000;
+
+
+
+u_addTitle(
+
+"世界救済者"
+
+);
+
+
+
+alert(
+
+"🎉完全クリア！"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// New Game +
+// ==========================
+
+
+function u_newGamePlus(){
+
+
+
+if(!UFinal.clear){
+
+
+
+alert(
+
+"クリア後のみ"
+
+);
+
+
+
+return;
+
+
+}
+
+
+
+U.stage=1;
+
+
+U.level=1;
+
+
+U.score=0;
+
+
+
+URebirth.count++;
+
+
+
+URebirth.power+=1;
+
+
+
+U.coin=10000;
+
+
+
+alert(
+
+"♻ New Game+開始\n"+
+"永続強化獲得"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// エンディング
+// ==========================
+
+
+function u_ending(){
+
+
+
+if(!UFinal.clear)
+return;
+
+
+
+alert(
+
+`
+🌌 ENDING
+
+あなたは全てのブロックを破壊し、
+世界を救った。
+
+しかし未知の世界には
+まだ新たなブロックが存在する…
+
+NEXT STAGE →
+`
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// UI
+
+let finalUI=
+document.createElement("div");
+
+
+
+finalUI.innerHTML=
+
+`
+
+<h3>🌌最終章</h3>
+
+
+<button onclick="u_unlockUniverse()">
+宇宙解放
+</button>
+
+
+<button onclick="u_createArtifact()">
+神器作成
+</button>
+
+
+<button onclick="u_startFinalBoss()">
+最終ボス
+</button>
+
+
+<button onclick="u_attackFinalBoss()">
+攻撃
+</button>
+
+
+<button onclick="u_newGamePlus()">
+New Game+
+</button>
+
+
+<button onclick="u_ending()">
+エンディング
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+
+finalUI,
+
+UC
+
+);// ==========================
+// 超大作 Part21
+// エフェクト・演出強化
+// ==========================
+
+
+const UEffect={
+
+
+particles:[],
+
+
+combo:0,
+
+
+shake:0
+
+
+};
+
+
+
+
+
+
+// ==========================
+// パーティクル生成
+// ==========================
+
+
+function u_createEffect(x,y,color){
+
+
+
+for(let i=0;i<20;i++){
+
+
+
+UEffect.particles.push({
+
+
+x:x,
+
+
+y:y,
+
+
+dx:(Math.random()-0.5)*6,
+
+
+dy:(Math.random()-0.5)*6,
+
+
+life:30,
+
+
+color:color
+
+
+});
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 更新
+// ==========================
+
+
+function u_updateEffect(){
+
+
+
+for(
+let i=UEffect.particles.length-1;
+i>=0;
+i--
+){
+
+
+
+let p=
+UEffect.particles[i];
+
+
+
+p.x+=p.dx;
+
+p.y+=p.dy;
+
+
+p.life--;
+
+
+
+if(p.life<=0){
+
+
+
+UEffect.particles.splice(i,1);
+
+
+
+}
+
+
+
+}
+
+
+
+if(UEffect.shake>0){
+
+
+UEffect.shake--;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 描画
+// ==========================
+
+
+function u_drawEffect(){
+
+
+
+for(let p of UEffect.particles){
+
+
+
+UX.fillStyle=p.color;
+
+
+
+UX.fillRect(
+
+p.x,
+
+p.y,
+
+4,
+
+4
+
+);
+
+
+
+}
+
+
+
+if(UEffect.combo>1){
+
+
+
+UX.fillStyle="yellow";
+
+
+UX.font="30px sans-serif";
+
+
+UX.fillText(
+
+"COMBO x"+
+UEffect.combo,
+
+100,
+
+200
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// コンボ
+// ==========================
+
+
+function u_addCombo(){
+
+
+
+UEffect.combo++;
+
+
+
+if(UEffect.combo>=10){
+
+
+
+U.coin+=100;
+
+
+alert(
+
+"🔥10コンボ!"
+
+);
+
+
+
+}
+
+
+
+setTimeout(()=>{
+
+
+UEffect.combo=0;
+
+
+},3000);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// クリティカル
+// ==========================
+
+
+function u_criticalAttack(){
+
+
+
+let rate=
+
+Math.random()*100;
+
+
+
+if(
+rate<U.critical
+){
+
+
+
+UBall.power*=3;
+
+
+
+u_createEffect(
+
+UBall.x,
+
+UBall.y,
+
+"gold"
+
+);
+
+
+
+alert(
+
+"✨CRITICAL!"
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 自動更新
+// ==========================
+
+
+setInterval(()=>{
+
+
+u_updateEffect();
 
 
 },50);
@@ -2514,38 +9670,181 @@ paddle.x=
 
 
 
-// UI更新
+// 描画追加
 
-let extraUI=
+let oldEffectDraw=
+
+u_draw;
+
+
+
+u_draw=function(){
+
+
+
+oldEffectDraw();
+
+
+
+u_drawEffect();
+
+
+
+};
+
+
+
+
+
+
+
+
+// UI
+
+let effectUI=
 document.createElement("div");
 
 
 
-extraUI.innerHTML=`
+effectUI.innerHTML=
 
-<h3>情報</h3>
+`
 
-<p>
-装備:
-<span id="equip2">
-${equipmentData.ball}
-</span>
-</p>
+<h3>✨演出</h3>
 
-<p>
-破壊数:
-<span id="breakCount">
-0
-</span>
-</p>
+
+<button onclick="u_criticalAttack()">
+クリティカル攻撃
+</button>
 
 `;
 
 
 
 document.body.insertBefore(
-extraUI,
-canvas
+
+effectUI,
+
+UC
+
+);// ==========================
+// 超大作 Part22
+// スマホ操作完全対応
+// ==========================
+
+
+// タッチ状態
+
+let UTouch={
+
+active:false,
+
+x:0,
+
+y:0
+
+};
+
+
+
+
+// ==========================
+// キャンバス自動調整
+// ==========================
+
+
+function u_resizeCanvas(){
+
+
+let size=
+
+Math.min(
+
+window.innerWidth-20,
+
+500
+
+);
+
+
+
+canvas.style.width=
+
+size+"px";
+
+
+
+canvas.style.height=
+
+(size*1.5)+"px";
+
+
+}
+
+
+
+window.addEventListener(
+
+"resize",
+
+u_resizeCanvas
+
+);
+
+
+u_resizeCanvas();
+
+
+
+
+
+// ==========================
+// タッチ開始
+// ==========================
+
+
+canvas.addEventListener(
+
+"touchstart",
+
+function(e){
+
+
+
+let touch=
+
+e.touches[0];
+
+
+
+let rect=
+
+canvas.getBoundingClientRect();
+
+
+
+UTouch.active=true;
+
+
+
+UTouch.x=
+
+touch.clientX-
+
+rect.left;
+
+
+
+UTouch.y=
+
+touch.clientY-
+
+rect.top;
+
+
+
+}
+
 );
 
 
@@ -2554,19 +9853,1322 @@ canvas
 
 
 
-// 最終起動
-
-makeBlocks();
-
-updateUI();
-
-drawGame();
+// ==========================
+// タッチ移動
+// ==========================
 
 
+canvas.addEventListener(
 
-</script>
+"touchmove",
+
+function(e){
 
 
-</body>
 
-</html>
+e.preventDefault();
+
+
+
+let touch=
+
+e.touches[0];
+
+
+
+let rect=
+
+canvas.getBoundingClientRect();
+
+
+
+let x=
+
+touch.clientX-
+
+rect.left;
+
+
+
+paddle.x=
+
+x-
+
+paddle.w/2;
+
+
+
+if(paddle.x<0)
+
+paddle.x=0;
+
+
+
+if(
+paddle.x+paddle.w>
+canvas.width
+)
+
+paddle.x=
+
+canvas.width-
+paddle.w;
+
+
+
+},
+
+{
+
+passive:false
+
+}
+
+);
+
+
+
+
+
+
+
+
+// ==========================
+// 仮想ボタン
+// ==========================
+
+
+let mobileUI=
+
+document.createElement("div");
+
+
+
+mobileUI.innerHTML=
+
+`
+
+<h3>🎮操作</h3>
+
+
+<button id="leftBtn">
+⬅
+</button>
+
+
+<button id="skillBtn">
+スキル
+</button>
+
+
+<button id="rightBtn">
+➡
+</button>
+
+`;
+
+
+
+document.body.appendChild(
+
+mobileUI
+
+);
+
+
+
+
+
+
+
+let moveLeft=false;
+
+let moveRight=false;
+
+
+
+
+
+document.getElementById(
+
+"leftBtn"
+
+).ontouchstart=
+
+()=>{
+
+moveLeft=true;
+
+};
+
+
+
+document.getElementById(
+
+"leftBtn"
+
+).ontouchend=
+
+()=>{
+
+moveLeft=false;
+
+};
+
+
+
+
+
+document.getElementById(
+
+"rightBtn"
+
+).ontouchstart=
+
+()=>{
+
+moveRight=true;
+
+};
+
+
+
+document.getElementById(
+
+"rightBtn"
+
+).ontouchend=
+
+()=>{
+
+moveRight=false;
+
+};
+
+
+
+
+
+
+
+document.getElementById(
+
+"skillBtn"
+
+).onclick=
+
+function(){
+
+
+
+if(typeof skill==="function")
+
+skill();
+
+
+
+};
+
+
+
+
+
+
+
+
+// ==========================
+// 移動処理
+// ==========================
+
+
+setInterval(()=>{
+
+
+if(moveLeft){
+
+
+paddle.x-=8;
+
+
+}
+
+
+
+if(moveRight){
+
+
+paddle.x+=8;
+
+
+}
+
+
+
+if(paddle.x<0)
+
+paddle.x=0;
+
+
+
+if(
+paddle.x+paddle.w>
+canvas.width
+)
+
+paddle.x=
+
+canvas.width-paddle.w;
+
+
+
+},30);// ==========================
+// 超大作 Part23
+// サウンドシステム
+// ==========================
+
+
+
+const USound={
+
+
+bgm:true,
+
+volume:0.5,
+
+
+boss:false
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// Audio管理
+// ==========================
+
+
+const UAudio={
+
+
+
+bgm:new Audio(),
+
+
+break:new Audio(),
+
+
+hit:new Audio(),
+
+
+boss:new Audio(),
+
+
+clear:new Audio()
+
+
+
+};
+
+
+
+
+
+
+
+
+// ==========================
+// 音量設定
+// ==========================
+
+
+function u_setVolume(value){
+
+
+
+USound.volume=value;
+
+
+
+for(let key in UAudio){
+
+
+
+UAudio[key].volume=value;
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// BGM開始
+// ==========================
+
+
+function u_startBGM(){
+
+
+
+if(!USound.bgm)
+return;
+
+
+
+// 音源を設定する場所
+
+// 例:
+// UAudio.bgm.src="bgm.mp3";
+
+
+
+UAudio.bgm.loop=true;
+
+
+UAudio.bgm.volume=
+
+USound.volume;
+
+
+
+// UAudio.bgm.play();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 効果音
+// ==========================
+
+
+function u_playSound(type){
+
+
+
+if(!UAudio[type])
+return;
+
+
+
+UAudio[type].currentTime=0;
+
+
+
+// UAudio[type].play();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ブロック破壊音
+// ==========================
+
+
+function u_blockSound(){
+
+
+
+u_playSound(
+
+"break"
+
+);
+
+
+
+u_addCombo();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ボスBGM
+// ==========================
+
+
+function u_bossMusic(){
+
+
+
+USound.boss=true;
+
+
+
+u_playSound(
+
+"boss"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+function u_normalMusic(){
+
+
+
+USound.boss=false;
+
+
+
+u_playSound(
+
+"bgm"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// クリア音
+// ==========================
+
+
+function u_clearSound(){
+
+
+
+u_playSound(
+
+"clear"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// 音設定UI
+// ==========================
+
+
+let soundUI=
+
+document.createElement("div");
+
+
+
+soundUI.innerHTML=
+
+`
+
+<h3>🔊サウンド</h3>
+
+
+<button onclick="u_startBGM()">
+BGM ON
+</button>
+
+
+<button onclick="USound.bgm=false">
+BGM OFF
+</button>
+
+
+<br>
+
+
+音量
+
+
+<input
+
+type="range"
+
+min="0"
+
+max="1"
+
+step="0.1"
+
+value="0.5"
+
+oninput="u_setVolume(this.value)"
+
+>
+
+
+`;
+
+
+
+document.body.appendChild(
+
+soundUI
+
+);// ==========================
+// 超大作 Part24
+// タイトル・ロード・セーブ強化
+// ==========================
+
+
+
+const UGameData={
+
+
+slot:1,
+
+
+created:false,
+
+
+playTime:0
+
+
+};
+
+
+
+
+
+
+
+// ==========================
+// タイトル画面
+// ==========================
+
+
+function u_showTitle(){
+
+
+
+let titleScreen=
+
+document.createElement("div");
+
+
+
+titleScreen.id=
+
+"titleScreen";
+
+
+
+titleScreen.innerHTML=
+
+`
+
+<h1>
+🎮 Ultimate Block Breaker
+</h1>
+
+
+<p>
+究極のブロック破壊ゲーム
+</p>
+
+
+<button onclick="u_startTitleGame()">
+START
+</button>
+
+
+<button onclick="u_loadGame()">
+LOAD
+</button>
+
+
+`;
+
+
+
+document.body.insertBefore(
+
+titleScreen,
+
+document.body.firstChild
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ゲーム開始
+// ==========================
+
+
+function u_startTitleGame(){
+
+
+
+let screen=
+
+document.getElementById(
+
+"titleScreen"
+
+);
+
+
+
+if(screen)
+
+screen.remove();
+
+
+
+UGameData.created=true;
+
+
+
+u_saveGame();
+
+
+
+alert(
+
+"ゲーム開始！"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// セーブ強化
+// ==========================
+
+
+function u_saveGame(){
+
+
+
+let save={
+
+
+
+time:Date.now(),
+
+
+game:U,
+
+
+ball:UBall,
+
+
+paddle:UPaddle,
+
+
+inventory:UInventory,
+
+
+artifact:UArtifact,
+
+
+world:UMap,
+
+
+quest:UQuest,
+
+
+achievement:UAchievement
+
+
+
+};
+
+
+
+localStorage.setItem(
+
+"UltimateBlockSave",
+
+JSON.stringify(save)
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// ロード強化
+// ==========================
+
+
+function u_loadGame(){
+
+
+
+let data=
+
+localStorage.getItem(
+
+"UltimateBlockSave"
+
+);
+
+
+
+if(!data){
+
+
+
+alert(
+
+"セーブデータなし"
+
+);
+
+
+
+return;
+
+
+}
+
+
+
+let save=
+
+JSON.parse(data);
+
+
+
+Object.assign(
+
+U,
+
+save.game
+
+);
+
+
+
+Object.assign(
+
+UBall,
+
+save.ball
+
+);
+
+
+
+Object.assign(
+
+UPaddle,
+
+save.paddle
+
+);
+
+
+
+Object.assign(
+
+UInventory,
+
+save.inventory
+
+);
+
+
+
+Object.assign(
+
+UArtifact,
+
+save.artifact
+
+);
+
+
+
+Object.assign(
+
+UMap,
+
+save.world
+
+);
+
+
+
+Object.assign(
+
+UQuest,
+
+save.quest
+
+);
+
+
+
+Object.assign(
+
+UAchievement,
+
+save.achievement
+
+);
+
+
+
+alert(
+
+"ロード完了"
+
+);
+
+
+
+u_updateUI();
+
+
+
+}
+
+
+
+
+
+
+
+
+// ==========================
+// プレイ時間
+// ==========================
+
+
+setInterval(()=>{
+
+
+UGameData.playTime++;
+
+
+
+},1000);
+
+
+
+
+
+
+
+
+// ==========================
+// 初回表示
+// ==========================
+
+
+setTimeout(()=>{
+
+
+u_showTitle();
+
+
+
+},500);// ==========================
+// 超大作 Part25
+// 完成版 安定化処理
+// ==========================
+
+
+
+// --------------------------
+// 安全な初期値
+// --------------------------
+
+
+function u_safeInit(){
+
+
+
+if(typeof U==="undefined"){
+
+
+
+window.U={
+
+
+score:0,
+
+coin:0,
+
+stage:1,
+
+hp:3,
+
+level:1,
+
+exp:0,
+
+critical:5,
+
+combo:0,
+
+running:false
+
+
+};
+
+
+
+}
+
+
+
+if(typeof UBall==="undefined"){
+
+
+
+window.UBall={
+
+
+x:180,
+
+y:400,
+
+r:8,
+
+dx:4,
+
+dy:-4,
+
+power:1
+
+
+};
+
+
+
+}
+
+
+
+if(typeof UPaddle==="undefined"){
+
+
+
+window.UPaddle={
+
+
+x:140,
+
+y:560,
+
+w:80,
+
+h:12
+
+
+};
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+// --------------------------
+// ゲーム開始統一
+// --------------------------
+
+
+function u_startFinalGame(){
+
+
+
+u_safeInit();
+
+
+
+U.running=true;
+
+
+
+if(typeof createBlocks==="function"){
+
+
+createBlocks();
+
+
+}
+
+
+
+if(typeof u_createStage==="function"){
+
+
+u_createStage();
+
+
+}
+
+
+
+u_startBGM();
+
+
+
+alert(
+
+"🎮 Ultimate Block Breaker\nSTART!"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+// --------------------------
+// 完全リセット
+// --------------------------
+
+
+function u_fullReset(){
+
+
+
+localStorage.removeItem(
+
+"UltimateBlockSave"
+
+);
+
+
+
+location.reload();
+
+
+
+}
+
+
+
+
+
+
+
+
+// --------------------------
+// 自動保存
+// --------------------------
+
+
+setInterval(()=>{
+
+
+
+try{
+
+
+
+u_saveGame();
+
+
+
+}
+
+catch(e){
+
+
+
+console.log(
+
+"save error"
+
+);
+
+
+
+}
+
+
+
+},10000);
+
+
+
+
+
+
+
+
+// --------------------------
+// エラー防止
+// --------------------------
+
+
+window.onerror=function(){
+
+
+
+console.log(
+
+"安全処理しました"
+
+);
+
+
+
+};
+
+
+
+
+
+
+
+
+// --------------------------
+// 完成メニュー
+// --------------------------
+
+
+let finalMenu=
+
+document.createElement("div");
+
+
+
+finalMenu.innerHTML=
+
+`
+
+<h2>🎮 完成版メニュー</h2>
+
+
+<button onclick="u_startFinalGame()">
+ゲーム開始
+</button>
+
+
+<button onclick="u_saveGame()">
+保存
+</button>
+
+
+<button onclick="u_loadGame()">
+ロード
+</button>
+
+
+<button onclick="u_fullReset()">
+最初から
+</button>
+
+
+`;
+
+
+
+document.body.appendChild(
+
+finalMenu
+
+);
+
+
+
+
+
+
+
+// 初期化
+
+u_safeInit();
