@@ -1,299 +1,319 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サイバー・ブロック崩し</title>
-    <style>
-        * { padding: 0; margin: 0; box-sizing: border-box; }
-        body { 
-            background: #0d0e15; 
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden; 
-            font-family: sans-serif;
-            color: #fff;
-        }
-        #ui {
-            width: 480px;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 16px;
-        }
-        canvas { 
-            background: #090a0f; 
-            border: 2px solid #00f2fe; 
-            border-radius: 8px; 
-            cursor: none;
-        }
-        .info {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #6a6d8c;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" 
+  content="width=device-width">
+<title>CYBER BRICK</title>
+<style>
+  * { margin: 0; padding: 0; }
+  body {
+    background: #0d0e15;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: sans-serif;
+    overflow: hidden;
+  }
+  #ui {
+    width: 320px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  canvas {
+    background: #090a0f;
+    border: 2px solid #00f2fe;
+    border-radius: 4px;
+  }
+</style>
 </head>
 <body>
 
 <div id="ui">
-    <div id="score">SCORE: 0</div>
-    <div id="lives">LIVES: ❤️❤️❤️</div>
+  <div id="sc">SCORE: 0</div>
+  <div id="lv">❤️3</div>
 </div>
-
-<canvas id="gameCanvas" width="480" height="320"></canvas>
-<div class="info">マウス移動でパドル操作 / アイテムでパワーアップ</div>
+<canvas id="cv" 
+  width="320" height="320"></canvas>
 
 <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
 
-    let score = 0;
-    let lives = 3;
-    let gameOver = false;
-    let gameWon = false;
+let score = 0, lives = 3;
+let gOver = false, gWin = false;
 
-    // パドルの設定
-    let paddleHeight = 10;
-    let paddleWidth = 80;
-    let paddleX = (canvas.width - paddleWidth) / 2;
+// パドル
+let pwd = 60, pX = 130, pH = 8;
+// ボール
+let bX = 160, bY = 280, bR = 5;
+let bSpd = 4, bDx = 3, bDy = -3;
 
-    // ボールの設定
-    let ballRadius = 6;
-    let ballX = canvas.width / 2;
-    let ballY = canvas.height - 30;
-    let ballSpeed = 4;
-    let ballDx = 3;
-    let ballDy = -3;
+// ブロック
+const row = 4, col = 5;
+const bW = 52, bH = 14, bPd = 5;
+const oTop = 30, oLeft = 20;
+const clrs = [
+  "#ff0055", "#ff9900", 
+  "#00ff66", "#00f2fe"
+];
 
-    // ブロックの設定
-    const rowCount = 4;
-    const colCount = 6;
-    const brickW = 62;
-    const brickH = 18;
-    const brickPad = 6;
-    const offsetTop = 40;
-    const offsetLeft = 38;
+let bricks = [];
+let pts = [], its = [];
 
-    const colors = ["#ff0055", "#ff9900", "#00ff66", "#00f2fe"];
+// 初期化
+for(let c=0; c<col; c++) {
+  bricks[c] = [];
+  for(let r=0; r<row; r++) {
+    bricks[c][r] = {
+      x:0, y:0, st:1, c:clrs[r]
+    };
+  }
+}
 
-    let bricks = [];
-    let particles = [];
-    let items = [];
-
-    // ブロック初期化
-    for(let c = 0; c < colCount; c++) {
-        bricks[c] = [];
-        for(let r = 0; r < rowCount; r++) {
-            bricks[c][r] = { x: 0, y: 0, status: 1, color: colors[r] };
-        }
-    }
-
-    // エフェクト生成
-    function addParticles(x, y, color) {
-        for (let i = 0; i < 8; i++) {
-            particles.push({
-                x: x, y: y,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
-                radius: Math.random() * 2 + 1,
-                color: color,
-                alpha: 1
-            });
-        }
-    }
-
-    // アイテム出現
-    function dropItem(x, y) {
-        if (Math.random() < 0.4) {
-            const types = ['wide', 'slow'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            items.push({ x: x, y: y, type: type, radius: 6, vy: 1.5 });
-        }
-    }
-
-    // マウス操作
-    document.addEventListener("mousemove", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const relativeX = e.clientX - rect.left;
-        if(relativeX > 0 && relativeX < canvas.width) {
-            paddleX = relativeX - paddleWidth / 2;
-            if (paddleX < 0) paddleX = 0;
-            if (paddleX + paddleWidth > canvas.width) {
-                paddleX = canvas.width - paddleWidth;
-            }
-        }
+// 演出生成
+function addPt(x, y, clr) {
+  for(let i=0; i<6; i++) {
+    pts.push({
+      x:x, y:y,
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4,
+      a:1, c:clr
     });
+  }
+}
 
-    // 衝突判定
-    function checkCollision() {
-        for(let c = 0; c < colCount; c++) {
-            for(let r = 0; r < rowCount; r++) {
-                let b = bricks[c][r];
-                if(b.status === 1) {
-                    if(ballX > b.x && ballX < b.x + brickW && 
-                       ballY > b.y && ballY < b.y + brickH) {
-                        ballDy = -ballDy;
-                        b.status = 0;
-                        score += 10;
-                        document.getElementById("score").innerText = "SCORE: " + score;
-                        
-                        addParticles(ballX, ballY, b.color);
-                        dropItem(b.x + brickW/2, b.y + brickH);
-
-                        if(bricks.flat().every(bk => bk.status === 0)) {
-                            gameWon = true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // ゲームの更新
-    function update() {
-        if (gameOver || gameWon) return;
-
-        ballX += ballDx;
-        ballY += ballDy;
-
-        // 壁との反射
-        if(ballX + ballDx > canvas.width - ballRadius || ballX + ballDx < ballRadius) {
-            ballDx = -ballDx;
-        }
-        if(ballY + ballDy < ballRadius) {
-            ballDy = -ballDy;
-        } 
-        // パドルとの反射
-        else if(ballY + ballDy > canvas.height - ballRadius - paddleHeight) {
-            if(ballX > paddleX && ballX < paddleX + paddleWidth) {
-                let hit = (ballX - (paddleX + paddleWidth / 2)) / (paddleWidth / 2);
-                ballDx = hit * ballSpeed;
-                ballDy = -Math.sqrt(ballSpeed * ballSpeed - ballDx * ballDx);
-                if (Math.abs(ballDy) < 1.5) ballDy = -1.5;
-            }
-            else if (ballY + ballDy > canvas.height - ballRadius) {
-                lives--;
-                let txt = "";
-                for(let i=0; i<lives; i++) txt += "❤️";
-                document.getElementById("lives").innerText = "LIVES: " + txt;
-
-                if(lives === 0) {
-                    gameOver = true;
-                } else {
-                    ballX = canvas.width / 2;
-                    ballY = canvas.height - 30;
-                    ballDx = 3;
-                    ballDy = -3;
-                }
-            }
-        }
-
-        // パーティクル更新
-        for (let i = particles.length - 1; i >= 0; i--) {
-            let p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.alpha -= 0.03;
-            if (p.alpha <= 0) particles.splice(i, 1);
-        }
-
-        // アイテム更新
-        for (let i = items.length - 1; i >= 0; i--) {
-            let it = items[i];
-            it.y += it.vy;
-
-            if (it.y + it.radius >= canvas.height - paddleHeight && 
-                it.x >= paddleX && it.x <= paddleX + paddleWidth) {
-                
-                if (it.type === 'wide') {
-                    paddleWidth = 130;
-                    setTimeout(() => paddleWidth = 80, 6000);
-                } else {
-                    ballDx *= 0.6; ballDy *= 0.6;
-                    setTimeout(() => { ballDx /= 0.6; ballDy /= 0.6; }, 5000);
-                }
-                items.splice(i, 1);
-                continue;
-            }
-            if (it.y > canvas.height) items.splice(i, 1);
-        }
-        checkCollision();
-    }
-
-    // ゲームの描画
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // ブロック
-        for(let c = 0; c < colCount; c++) {
-            for(let r = 0; r < rowCount; r++) {
-                let b = bricks[c][r];
-                if(b.status === 1) {
-                    b.x = (c * (brickW + brickPad)) + offsetLeft;
-                    b.y = (r * (brickH + brickPad)) + offsetTop;
-                    ctx.fillStyle = b.color;
-                    ctx.fillRect(b.x, b.y, brickW, brickH);
-                }
-            }
-        }
-
-        // パドル
-        ctx.fillStyle = "#00f2fe";
-        ctx.fillRect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-
-        // ボール
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI*2);
-        ctx.fill();
-
-        // パーティクル
-        particles.forEach(p => {
-            ctx.save(); ctx.globalAlpha = p.alpha;
-            ctx.fillStyle = p.color;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-            ctx.fill(); ctx.restore();
-        });
-
-        // アイテム
-        items.forEach(it => {
-            ctx.beginPath(); ctx.arc(it.x, it.y, it.radius, 0, Math.PI*2);
-            ctx.fillStyle = it.type === 'wide' ? '#00ff66' : '#00f2fe';
-            ctx.fill();
-        });
-
-        // テキスト画面
-        if (gameOver || gameWon) {
-            ctx.fillStyle = "rgba(0,0,0,0.8)";
-            ctx.fillRect(0,0,canvas.width,canvas.height);
-            ctx.font = "bold 24px sans-serif";
-            ctx.textAlign = "center";
-            ctx.fillStyle = gameOver ? "#ff0055" : "#00ff66";
-            ctx.fillText(gameOver ? "GAME OVER" : "CLEAR!", canvas.width/2, 150);
-            ctx.font = "14px sans-serif";
-            ctx.fillStyle = "#fff";
-            ctx.fillText("画面クリックでリスタート", canvas.width/2, 190);
-        }
-    }
-
-    // リスタート
-    canvas.addEventListener("click", () => {
-        if (gameOver || gameWon) {
-            score = 0; lives = 3; gameOver = false; gameWon = false;
-            items = []; particles = [];
-            ballX = canvas.width / 2; ballY = canvas.height - 30;
-            ballDx = 3; ballDy = -3; paddleWidth = 80;
-            document.getElementById("score").innerText = "SCORE: 0";
-            document.getElementById("lives").innerText = "LIVES: ❤️❤️❤️";
-            for(let c=0;c<colCount;c++)for(let r=0;r<rowCount;r++)bricks[c][r].status=1;
-        }
+// アイテム落下
+function drop(x, y) {
+  if(Math.random() < 0.4) {
+    let t = Math.random() > 0.5 ? 
+      'w' : 's';
+    its.push({
+      x:x, y:y, t:t, r:5
     });
+  }
+}
 
-    function loop() { update(); draw(); requestAnimationFrame(loop); }
-    loop();
+// マウス移動
+document.addEventListener(
+  "mousemove", (e) => {
+  let r = cv.getBoundingClientRect();
+  let mX = e.clientX - r.left;
+  if(mX > 0 && mX < cv.width) {
+    pX = mX - pwd/2;
+  }
+});
+
+// スマホ操作
+cv.addEventListener(
+  "touchmove", (e) => {
+  let r = cv.getBoundingClientRect();
+  let tX = e.touches[0].clientX - r.left;
+  if(tX > 0 && tX < cv.width) {
+    pX = tX - pwd/2;
+  }
+  e.preventDefault();
+}, {passive: false});
+
+// 衝突判定
+function hit() {
+  for(let c=0; c<col; c++) {
+    for(let r=0; r<row; r++) {
+      let b = bricks[c][r];
+      if(b.st === 1) {
+        if(bX > b.x && bX < b.x+bW &&
+           bY > b.y && bY < b.y+bH) {
+          bDy = -bDy;
+          b.st = 0;
+          score += 10;
+          document.getElementById("sc")
+            .innerText = "SCORE: "+score;
+          addPt(bX, bY, b.c);
+          drop(b.x+bW/2, b.y+bH);
+          if(bricks.flat().every(
+            bk => bk.st === 0)) {
+            gWin = true;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 更新
+function update() {
+  if(gOver || gWin) return;
+  bX += bDx; bY += bDy;
+
+  // 壁反射
+  if(bX+bDx > cv.width-bR || 
+     bX+bDx < bR) bDx = -bDx;
+  if(bY+bDy < bR) bDy = -bDy;
+  
+  // パドル反射
+  else if(bY+bDy > cv.height-bR-pH) {
+    if(bX > pX && bX < pX+pwd) {
+      let h = (bX - (pX+pwd/2)) / 
+        (pwd/2);
+      bDx = h * bSpd;
+      bDy = -Math.sqrt(
+        bSpd*bSpd - bDx*bDx
+      );
+      if(Math.abs(bDy) < 1.5) {
+        bDy = -1.5;
+      }
+    }
+    else if(bY+bDy > cv.height-bR) {
+      lives--;
+      document.getElementById("lv")
+        .innerText = "❤️" + lives;
+      if(lives === 0) gOver = true;
+      else {
+        bX = 160; bY = 280;
+        bDx = 3; bDy = -3;
+      }
+    }
+  }
+
+  // パーティクル
+  for(let i=pts.length-1; i>=0; i--) {
+    let p = pts[i];
+    p.x += p.vx; p.y += p.vy;
+    p.a -= 0.04;
+    if(p.a <= 0) pts.splice(i, 1);
+  }
+
+  // アイテム
+  for(let i=its.length-1; i>=0; i--) {
+    let it = its[i];
+    it.y += 1.5;
+    if(it.y >= cv.height-pH &&
+       it.x > pX && it.x < pX+pwd) {
+      if(it.t === 'w') {
+        pwd = 100;
+        setTimeout(()=>pwd=60, 5000);
+      } else {
+        bDx *= 0.6; bDy *= 0.6;
+        setTimeout(()=>{
+          bDx /= 0.6; bDy /= 0.6;
+        }, 4000);
+      }
+      its.splice(i, 1);
+      continue;
+    }
+    if(it.y > cv.height) its.splice(i,1);
+  }
+  hit();
+}
+
+// 描画
+function draw() {
+  ctx.clearRect(
+    0, 0, cv.width, cv.height
+  );
+
+  // ブロック
+  for(let c=0; c<col; c++) {
+    for(let r=0; r<row; r++) {
+      let b = bricks[c][r];
+      if(b.st === 1) {
+        b.x = c*(bW+bPd) + oLeft;
+        b.y = r*(bH+bPd) + oTop;
+        ctx.fillStyle = b.c;
+        ctx.fillRect(
+          b.x, b.y, bW, bH
+        );
+      }
+    }
+  }
+
+  // パドル
+  ctx.fillStyle = "#00f2fe";
+  ctx.fillRect(
+    pX, cv.height-pH, pwd, pH
+  );
+
+  // ボール
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(
+    bX, bY, bR, 0, Math.PI*2
+  );
+  ctx.fill();
+
+  // 演出
+  pts.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.a;
+    ctx.fillStyle = p.c;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // アイテム
+  its.forEach(it => {
+    ctx.beginPath();
+    ctx.arc(
+      it.x, it.y, it.r, 0, Math.PI*2
+    );
+    ctx.fillStyle = it.t === 'w' ? 
+      '#00ff66' : '#00f2fe';
+    ctx.fill();
+  });
+
+  // 終了画面
+  if(gOver || gWin) {
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(
+      0, 0, cv.width, cv.height
+    );
+    ctx.font = "bold 20px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = gOver ? 
+      "#ff0055" : "#00ff66";
+    ctx.fillText(
+      gOver ? "GAME OVER":"CLEAR!",
+      cv.width/2, 140
+    );
+    ctx.font = "12px sans-serif";
+    ctx.fillStyle = "#fff";
+    ctx.fillText(
+      "クリックでリスタート",
+      cv.width/2, 180
+    );
+  }
+}
+
+// リスタート
+cv.addEventListener("click", () => {
+  if(gOver || gWin) {
+    score = 0; lives = 3;
+    gOver = false; gWin = false;
+    its = []; pts = [];
+    bX = 160; bY = 280;
+    bDx = 3; bDy = -3; pwd = 60;
+    document.getElementById("sc")
+      .innerText = "SCORE: 0";
+    document.getElementById("lv")
+      .innerText = "❤️3";
+    for(let c=0; c<col; c++)
+      for(let r=0; r<row; r++)
+        bricks[c][r].st = 1;
+  }
+});
+
+function loop() {
+  update(); draw();
+  requestAnimationFrame(loop);
+}
+loop();
 </script>
 </body>
 </html>
