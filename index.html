@@ -1,193 +1,160 @@
-<!DOCTYPE html><html><head>
-<meta charset="UTF-8">
-<meta name="viewport" 
-content="width=device-width,
-initial-scale=1,
-user-scalable=no">
-<title>SHOOTER</title>
-<style>
-*{margin:0;padding:0;}
-body{background:#02020c;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-height:100vh;
-overflow:hidden;color:#fff;
-font-family:sans-serif;}
-#hd{width:360px;
-display:flex;
-justify-content:space-between;
-padding:8px;font-weight:bold;
-color:#0ff;}
-canvas{background:#000;
-border:2px solid #0ff;
-max-width:100vw;
-max-height:75vh;}
-#ov{position:absolute;
-background:rgba(2,2,12,0.95);
-width:100%;height:100%;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-z-index:10;}
-button{padding:15px 35px;
-font-size:18px;
-background:#f05;
-color:#fff;border:none;
-border-radius:50px;
-font-weight:bold;}
-</style></head><body>
-<div id="hd">
-<div id="sc">SCORE: 0</div>
-<div id="lv">LIVES: ❤️❤️❤️</div>
-</div>
-<canvas id="cv" 
-width="360" height="520">
-</canvas>
-<div id="ov">
-<h1 id="ti" 
-style="margin-bottom:20px;
-color:#0ff;">NEON SHOOTER</h1>
-<button onclick="st()">
-START</button></div>
-<script>
-const cv=document
-.getElementById("cv"),
-ctx=cv.getContext("2d"),
-ov=document
-.getElementById("ov"),
-ti=document
-.getElementById("ti"),
-sc=document
-.getElementById("sc"),
-lv=document
-.getElementById("lv");
-let isP=false,score=0,
-lives=3,px=180,py=450,
-fc=0,sk=0,pw=1,bls=[],
-ens=[],its=[],pts=[],sts=[];
-function init(){
-score=0;lives=3;px=180;
-py=450;fc=0;pw=1;bls=[];
-ens=[];its=[];pts=[];sts=[];
-for(let i=0;i<60;i++)
-sts.push({x:Math.random()*360,
-y:Math.random()*520,
-z:Math.random()*4+1});
-up();}
-window.addEventListener(
-"touchmove",(e)=>{
-e.preventDefault();
-let r=cv
-.getBoundingClientRect(),
-t=e.touches[0];
-px=(t.clientX-r.left)*
-(360/r.width);
-py=(t.clientY-r.top)*
-(520/r.height);
-px=Math.max(15,
-Math.min(345,px));
-py=Math.max(15,
-Math.min(505,py));
-},{passive:false});
-function st(){
-ov.style.display="none";
-init();if(!isP){isP=true;dr();}}
-function up(){
-sc.innerText="SCORE: "+score;
-lv.innerText="LIVES: "+
-"❤️".repeat(lives);}
-function dr(){
-if(!isP)return;fc++;
-ctx.save();if(sk>0){
-ctx.translate(
-(Math.random()-0.5)*sk,
-(Math.random()-0.5)*sk);
-sk-=0.5;}
-ctx.clearRect(0,0,360,520);
-for(let i=0;i<sts.length;i++){
-let s=sts[i];s.y+=s.z;
-if(s.y>520){s.y=0;
-s.x=Math.random()*360;}
-ctx.fillStyle=
-"rgba(255,255,255,"+
-(s.z/5)+")";
-ctx.fillRect(s.x,s.y,1,2);}
-if(fc%10===0){
-bls.push({x:px,y:py-15,
-dx:0,dy:-8,t:1});
-if(pw>=2){
-bls.push({x:px-10,y:py-10,
-dx:-2,dy:-7,t:1});
-bls.push({x:px+10,y:py-10,
-dx:2,dy:-7,t:1});}}
-if(fc%30===0){
-ens.push({x:Math.random()*300+30,
-y:-20,dx:(Math.random()-0.5)*2,
-dy:2,hp:Math.random()<0.2?3:1,
-t:Math.random()<0.2?2:1});}
-ctx.fillStyle="#0ff";
-ctx.beginPath();
-ctx.moveTo(px,py-15);
-ctx.lineTo(px-12,py+10);
-ctx.lineTo(px+12,py+10);
-ctx.fill();
-for(let i=bls.length-1;i>=0;i--){
-let b=bls[i];b.x+=b.dx;b.y+=b.dy;
-ctx.fillStyle=b.t===1?
-"#0ff":"#f05";
-ctx.fillRect(b.x-2,b.y-4,4,8);
-if(b.y<0||b.y>520)bls.splice(i,1);}
-for(let i=ens.length-1;i>=0;i--){
-let e=ens[i];e.x+=e.dx;e.y+=e.dy;
-ctx.fillStyle=e.t===2?
-"#fc0":"#f05";
-ctx.beginPath();
-ctx.arc(e.x,e.y,e.t===2?12:8,
-0,Math.PI*2);ctx.fill();
-if(e.x<10||e.x>350)e.dx=-e.dx;
-let d=Math.hypot(e.x-px,e.y-py);
-if(d<(e.t===2?20:15)){
-lives--;sk=20;up();
-ens.splice(i,1);pw=1;
-if(lives===0){isP=false;
-ov.style.display="flex";
-ti.innerHTML="GAME OVER";}
-continue;}
-for(let j=bls.length-1;j>=0;j--){
-let b=bls[j];
-if(b.t===1&&Math.hypot(
-b.x-e.x,b.y-e.y)<
-(e.t===2?18:12)){
-b.dy=-999;e.hp--;
-if(e.hp<=0){sk=8;
-score+=e.t===2?50:10;up();
-for(let k=0;k<8;k++)
-pts.push({x:e.x,y:e.y,
-dx:(Math.random()-0.5)*4,
-dy:(Math.random()-0.5)*4,
-a:1,c:e.t===2?"#fc0":"#f05"});
-if(Math.random()<0.3)
-its.push({x:e.x,y:e.y});
-e.y=999;}}}}
-for(let i=its.length-1;i>=0;i--){
-let t=its[i];t.y+=2;
-ctx.fillStyle="#0ff";
-ctx.font="bold 14px sans-serif";
-ctx.fillText("💎",t.x-5,t.y);
-if(Math.hypot(t.x-px,t.y-py)<20){
-pw=2;its.splice(i,1);continue;}
-if(t.y>520)its.splice(i,1);}
-for(let i=pts.length-1;i>=0;i--){
-let p=pts[i];p.x+=p.dx;p.y+=p.dy;
-p.a-=0.03;if(p.a<=0){
-pts.splice(i,1);}else{
-ctx.save();ctx.globalAlpha=p.a;
-ctx.fillStyle=p.c;
-ctx.fillRect(p.x-2,p.y-2,4,4);
-ctx.restore();}}
-ctx.restore();
-requestAnimationFrame(dr);}
-</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>シンプル・ブロック崩し</title>
+    <style>
+        body { background: #111; text-align: center; color: white; font-family: sans-serif; }
+        canvas { background: #222; border: 4px solid #fff; display: block; margin: 20px auto; }
+        h1 { margin-bottom: 5px; }
+        p { color: #aaa; }
+    </style>
+</head>
+<body>
+    <h1>ブロック崩し</h1>
+    <p>マウスを左右に動かしてパドルを操作してください</p>
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // ボールの設定
+        let x = canvas.width / 2;
+        let y = canvas.height - 30;
+        let dx = 3;
+        let dy = -3;
+        const ballRadius = 8;
+
+        // パドルの設定
+        const paddleHeight = 10;
+        const paddleWidth = 75;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+
+        // ブロックの設定
+        const brickRowCount = 3;
+        const brickColumnCount = 5;
+        const brickWidth = 75;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 30;
+        const brickOffsetLeft = 30;
+
+        // ブロックの配列初期化
+        const bricks = [];
+        for (let c = 0; c < brickColumnCount; c++) {
+            bricks[c] = [];
+            for (let r = 0; r < brickRowCount; r++) {
+                bricks[c][r] = { x: 0, y: 0, status: 1 };
+            }
+        }
+
+        // マウス移動のイベントリスナー
+        document.addEventListener("mousemove", mouseMoveHandler, false);
+
+        function mouseMoveHandler(e) {
+            const relativeX = e.clientX - canvas.offsetLeft;
+            if (relativeX > 0 && relativeX < canvas.width) {
+                paddleX = relativeX - paddleWidth / 2;
+            }
+        }
+
+        // 衝突判定
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    const b = bricks[c][r];
+                    if (b.status === 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            // クリア判定
+                            if (checkWin()) {
+                                alert("おめでとうございます！クリアです！");
+                                document.location.reload();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function checkWin() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) return false;
+                }
+            }
+            return true;
+        }
+
+        // 描画関数
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                        const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = "#FF5733";
+                        ctx.fill();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        // メインループ
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBricks();
+            drawBall();
+            drawPaddle();
+            collisionDetection();
+
+            // 壁との衝突判定（左右）
+            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                dx = -dx;
+            }
+            // 壁との衝突判定（上）
+            if (y + dy < ballRadius) {
+                dy = -dy;
+            } else if (y + dy > canvas.height - ballRadius) {
+                // パドルとの衝突判定
+                if (x > paddleX && x < paddleX + paddleWidth) {
+                    dy = -dy;
+                } else {
+                    alert("ゲームオーバー");
+                    document.location.reload();
+                    return;
+                }
+            }
+
+            x += dx;
+            y += dy;
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+</body>
+</html>
