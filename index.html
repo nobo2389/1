@@ -4,99 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>文明進化放置ゲーム</title>
+<title>ブロック崩し</title>
 
 <style>
 
-*{
-box-sizing:border-box;
-}
-
 body{
 margin:0;
-background:#101820;
+background:#111;
 color:white;
 font-family:sans-serif;
-}
-
-#app{
-max-width:600px;
-margin:auto;
-padding:10px;
-}
-
-h1{
 text-align:center;
 }
 
-
-.panel{
-background:#1c2833;
-border-radius:15px;
-padding:15px;
-margin:10px 0;
+canvas{
+background:#000;
+border:2px solid white;
+touch-action:none;
 }
-
 
 button{
-
-width:90%;
-padding:12px;
-margin:5px;
-
-border:0;
+padding:12px 25px;
+font-size:18px;
+margin:10px;
 border-radius:10px;
-
-background:#3498db;
-color:white;
-
-font-size:16px;
-
 }
-
-
-button:active{
-
-transform:scale(0.95);
-
-}
-
-
-.value{
-
-font-size:22px;
-color:#f1c40f;
-
-}
-
-
-.bar{
-
-height:20px;
-background:#333;
-border-radius:10px;
-overflow:hidden;
-
-}
-
-
-.bar div{
-
-height:100%;
-width:0%;
-background:#2ecc71;
-
-}
-
-
-
-.small{
-
-font-size:12px;
-color:#aaa;
-
-}
-
 
 </style>
 
@@ -105,228 +36,208 @@ color:#aaa;
 
 <body>
 
-
-<div id="app">
-
-
-<h1>🌎 文明進化</h1>
-
-
-
-<div class="panel">
-
-<h2>資源</h2>
-
+<h1>🎮 ブロック崩し</h1>
 
 <p>
-💰 コイン
+スコア：
+<span id="score">0</span>
+</p>
+
+<p>
+残機：
+<span id="life">3</span>
+</p>
+
+
+<canvas id="canvas" width="360" height="600"></canvas>
+
 <br>
-<span id="coin" class="value">0</span>
-</p>
 
-
-<p>
-🌲 木材
-<br>
-<span id="wood">0</span>
-</p>
-
-
-<p>
-🪨 石材
-<br>
-<span id="stone">0</span>
-</p>
-
-
-<p>
-🔬 研究ポイント
-<br>
-<span id="science">0</span>
-</p>
-
-
-</div>
-
-
-
-
-<div class="panel">
-
-
-<h2>文明</h2>
-
-
-<p>
-レベル：
-<span id="level">1</span>
-</p>
-
-
-<div class="bar">
-<div id="xpbar"></div>
-</div>
-
-
-<p>
-経験値
-<span id="xp">0</span>
-/
-<span id="need">100</span>
-</p>
-
-
-</div>
-
-
-
-
-
-<div class="panel">
-
-
-<h2>操作</h2>
-
-
-<button onclick="collect()">
-資源を採取
+<button onclick="startGame()">
+スタート
 </button>
 
 
-<button onclick="save()">
-セーブ
+<button onclick="resetGame()">
+リセット
 </button>
-
-
-<button onclick="load()">
-ロード
-</button>
-
-
-</div>
-
-
-
-
-
-<div class="panel">
-
-
-<h2>建築</h2>
-
-
-<button onclick="build('farm')">
-🌾農場 建設
-</button>
-
-
-<button onclick="build('mine')">
-⛏鉱山 建設
-</button>
-
-
-<button onclick="build('factory')">
-🏭工場 建設
-</button>
-
-
-<p>
-農場:
-<span id="farm">0</span>
-</p>
-
-<p>
-鉱山:
-<span id="mine">0</span>
-</p>
-
-
-<p>
-工場:
-<span id="factory">0</span>
-</p>
-
-
-</div>
-
-
-
-
-<div class="panel">
-
-
-<h2>研究</h2>
-
-
-<button onclick="research()">
-研究する
-</button>
-
-
-<p>
-研究レベル:
-<span id="research">0</span>
-</p>
-
-
-</div>
-
-
-
-
-<div class="panel">
-
-<h2>ログ</h2>
-
-<div id="log">
-文明が始まった
-</div>
-
-</div>
-
-
-
-</div>
-
-
 
 
 
 <script>
 
 
-let game={
-
-coin:0,
-
-wood:0,
-
-stone:0,
-
-science:0,
+const canvas=
+document.getElementById("canvas");
 
 
-level:1,
-
-xp:0,
-
-need:100,
+const ctx=
+canvas.getContext("2d");
 
 
-farm:0,
 
-mine:0,
-
-factory:0,
+let running=false;
 
 
-research:0,
+let score=0;
+
+let life=3;
 
 
-last:Date.now()
 
+// ボール
+
+let ball={
+
+x:180,
+
+y:400,
+
+size:8,
+
+dx:4,
+
+dy:-4
 
 };
+
+
+
+
+// パドル
+
+let paddle={
+
+x:140,
+
+y:560,
+
+width:80,
+
+height:12
+
+};
+
+
+
+
+
+// ブロック
+
+let blocks=[];
+
+
+
+function createBlocks(){
+
+
+blocks=[];
+
+
+for(let row=0;row<5;row++){
+
+
+for(let col=0;col<8;col++){
+
+
+blocks.push({
+
+x:10+col*43,
+
+y:40+row*25,
+
+w:38,
+
+h:18,
+
+alive:true
+
+});
+
+
+}
+
+}
+
+
+}
+
+
+
+
+
+
+function draw(){
+
+
+
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+
+// ボール
+
+ctx.fillStyle="white";
+
+ctx.beginPath();
+
+ctx.arc(
+ball.x,
+ball.y,
+ball.size,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+
+
+// パドル
+
+ctx.fillStyle="cyan";
+
+ctx.fillRect(
+paddle.x,
+paddle.y,
+paddle.width,
+paddle.height
+);
+
+
+
+// ブロック
+
+for(let b of blocks){
+
+
+if(b.alive){
+
+
+ctx.fillStyle="red";
+
+
+ctx.fillRect(
+b.x,
+b.y,
+b.w,
+b.h
+);
+
+
+}
+
+
+}
+
+
+}
+
 
 
 
@@ -335,1616 +246,33 @@ last:Date.now()
 function update(){
 
 
-coin.innerText=Math.floor(game.coin);
-
-wood.innerText=Math.floor(game.wood);
-
-stone.innerText=Math.floor(game.stone);
-
-science.innerText=Math.floor(game.science);
-
-
-level.innerText=game.level;
-
-xp.innerText=Math.floor(game.xp);
-
-need.innerText=Math.floor(game.need);
-
-
-farm.innerText=game.farm;
-
-mine.innerText=game.mine;
-
-factory.innerText=game.factory;
-
-
-research.innerText=game.research;
-
-
-xpbar.style.width=
-Math.min(100,game.xp/game.need*100)+"%";
-
-
-}
-
-
-
-
-
-function log(t){
-
-document.getElementById("log").innerText=t;
-
-}
-
-
-
-
-
-function collect(){
-
-
-game.coin+=10;
-
-game.wood+=3;
-
-game.stone+=1;
-
-game.xp+=5;
-
-
-levelCheck();
-
-
-log("資源を集めた");
-
-
-update();
-
-
-}
-
-
-
-
-
-function levelCheck(){
-
-
-while(game.xp>=game.need){
-
-
-game.xp-=game.need;
-
-
-game.level++;
-
-
-game.need*=1.5;
-
-
-game.science+=10;
-
-
-log("文明レベルアップ");
-
-
-}
-
-
-}
-
-
-
-
-
-function build(type){
-
-
-let cost;
-
-
-if(type==="farm")
-cost=200+game.farm*100;
-
-
-if(type==="mine")
-cost=500+game.mine*300;
-
-
-if(type==="factory")
-cost=2000+game.factory*1000;
-
-
-
-if(game.coin>=cost){
-
-
-game.coin-=cost;
-
-
-game[type]++;
-
-
-log(type+"を建設");
-
-
-}else{
-
-
-log("コイン不足");
-
-
-}
-
-
-
-update();
-
-
-}
-
-
-
-
-
-function research(){
-
-
-let cost=1000*(game.research+1);
-
-
-
-if(game.coin>=cost){
-
-
-game.coin-=cost;
-
-
-game.research++;
-
-
-log("研究成功");
-
-
-}else{
-
-
-log("研究費不足");
-
-
-}
-
-
-
-update();
-
-
-}
-
-
-
-
-
-
-setInterval(()=>{
-
-
-let now=Date.now();
-
-
-let sec=(now-game.last)/1000;
-
-
-game.last=now;
-
-
-
-game.coin +=
-(game.farm*5+
-game.mine*15+
-game.factory*50+
-game.research*20)
-*sec;
-
-
-
-update();
-
-
-
-},1000);// ================================
-// Part2
-// オフライン報酬・保存強化・イベント基礎
-// ================================
-
-
-
-function save(){
-
-localStorage.setItem(
-"civilization_game",
-JSON.stringify(game)
-);
-
-log("セーブしました");
-
-}
-
-
-
-
-
-function load(){
-
-let data=
-localStorage.getItem(
-"civilization_game"
-);
-
-
-if(data){
-
-game=JSON.parse(data);
-
-
-let now=Date.now();
-
-let offline=
-(now-game.last)/1000;
-
-
-if(offline>0){
-
-let gain=
-(game.farm*5+
-game.mine*15+
-game.factory*50+
-game.research*20)
-*
-offline;
-
-
-gain=Math.floor(gain);
-
-
-if(gain>0){
-
-game.coin+=gain;
-
-
-log(
-"放置報酬 "+
-gain+
-" コイン獲得"
-);
-
-}
-
-}
-
-
-game.last=Date.now();
-
-
-update();
-
-
-}else{
-
-
-log("セーブデータなし");
-
-
-}
-
-
-
-}
-
-
-
-
-
-// ================================
-// 建物詳細データ
-// ================================
-
-
-
-let buildingData={
-
-
-farm:{
-
-name:"農場",
-
-wood:20,
-
-stone:10,
-
-desc:"毎秒コインを生産する"
-
-},
-
-
-mine:{
-
-name:"鉱山",
-
-wood:50,
-
-stone:30,
-
-desc:"大量の資源を生む"
-
-},
-
-
-factory:{
-
-name:"工場",
-
-wood:200,
-
-stone:100,
-
-desc:"高度な生産施設"
-
-}
-
-
-
-};
-
-
-
-
-
-
-
-// ================================
-// 木材・石材を使う建築システム追加
-// ================================
-
-
-
-
-function advancedBuild(type){
-
-
-let b=
-buildingData[type];
-
-
-if(!b)return;
-
-
-
-if(
-game.wood>=b.wood &&
-game.stone>=b.stone
-){
-
-
-game.wood-=b.wood;
-
-game.stone-=b.stone;
-
-
-game[type]++;
-
-
-log(
-b.name+
-"を建設しました"
-);
-
-
-
-}else{
-
-
-log(
-"材料が足りません"
-);
-
-
-}
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// ランダムイベント
-// ================================
-
-
-
-let events=[
-
-
-"豊作が起きた",
-
-"新しい技術を発見した",
-
-"未知の資源を発見した",
-
-"商人が訪れた",
-
-"文明が成長した"
-
-
-];
-
-
-
-
-
-
-function randomEvent(){
-
-
-let chance=Math.random();
-
-
-
-if(chance<0.05){
-
-
-let e=
-events[
-Math.floor(
-Math.random()*events.length
-)
-];
-
-
-
-let reward=
-Math.floor(
-Math.random()*500
-)+100;
-
-
-
-game.coin+=reward;
-
-
-
-log(
-e+
-" コイン+"+
-reward
-);
-
-
-
-update();
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-setInterval(()=>{
-
-
-randomEvent();
-
-
-},5000);
-
-
-
-
-
-
-
-// ================================
-// 実績システム準備
-// ================================
-
-
-
-game.achievements =
-game.achievements || [];
-
-
-
-
-function checkAchievement(){
-
-
-if(
-game.level>=5 &&
-!game.achievements.includes("level5")
-){
-
-
-game.achievements.push(
-"level5"
-);
-
-
-game.coin+=1000;
-
-
-log(
-"実績解除：文明レベル5"
-);
-
-
-}
-
-
-
-if(
-game.coin>=100000 &&
-!game.achievements.includes("rich")
-){
-
-
-game.achievements.push(
-"rich"
-);
-
-
-game.coin+=5000;
-
-
-log(
-"実績解除：大富豪"
-);
-
-
-}
-
-
-
-}
-
-
-
-
-
-setInterval(()=>{
-
-
-checkAchievement();
-
-
-},3000);
-
-
-
-
-update();// ================================
-// Part3
-// 人口・職業・時代進化システム
-// ================================
-
-
-
-game.population =
-game.population || 10;
-
-
-game.food =
-game.food || 100;
-
-
-game.age =
-game.age || 1;
-
-
-
-game.jobs =
-game.jobs || {
-
-farmer:0,
-
-miner:0,
-
-worker:0,
-
-scientist:0
-
-};
-
-
-
-
-
-// ================================
-// 人口表示追加用
-// ================================
-
-
-function populationUpdate(){
-
-
-let foodUse=
-game.population*0.1;
-
-
-game.food-=foodUse;
-
-
-
-if(game.food<0){
-
-game.food=0;
-
-
-}
-
-
-
-
-// 食料が十分なら人口増加
-
-
-if(
-game.food>200 &&
-game.population<10000
-){
-
-
-game.population+=0.01;
-
-
-}
-
-
-
-
-// 人口による自動生産
-
-
-game.coin+=
-game.jobs.worker*2;
-
-
-game.wood+=
-game.jobs.farmer*0.5;
-
-
-game.stone+=
-game.jobs.miner*0.3;
-
-
-game.science+=
-game.jobs.scientist*0.2;
-
-
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 職業変更
-// ================================
-
-
-
-
-function setJob(type){
-
-
-if(game.population<=0){
-
-log("人口不足");
-
-return;
-
-}
-
-
-
-let total=
-
-game.jobs.farmer+
-game.jobs.miner+
-game.jobs.worker+
-game.jobs.scientist;
-
-
-
-if(total>=Math.floor(game.population)){
-
-log("働ける人口が足りません");
-
-return;
-
-}
-
-
-
-if(game.jobs[type]!==undefined){
-
-
-game.jobs[type]++;
-
-
-log(
-type+
-"を配置しました"
-);
-
-
-}
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 時代進化
-// ================================
-
-
-
-let ageData=[
-
-
-{
-
-name:"原始時代",
-
-need:1
-
-},
-
-
-{
-
-name:"農耕時代",
-
-need:5
-
-},
-
-
-{
-
-name:"中世",
-
-need:15
-
-},
-
-
-{
-
-name:"産業時代",
-
-need:30
-
-},
-
-
-{
-
-name:"未来時代",
-
-need:60
-
-}
-
-
-];
-
-
-
-
-
-
-function ageCheck(){
-
-
-
-let next=
-ageData[game.age];
-
-
-
-if(
-next &&
-game.level>=next.need
-){
-
-
-game.age++;
-
-
-game.coin+=5000;
-
-
-log(
-"時代進化！ "+
-ageData[game.age-1].name
-);
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 食料生産
-// ================================
-
-
-
-
-function foodProduction(){
-
-
-
-game.food+=
-game.farm*3;
-
-
-}
-
-
-
-
-// ================================
-// 研究ボーナス
-// ================================
-
-
-
-function researchBonus(){
-
-
-let bonus=
-1+
-(game.research*0.05);
-
-
-
-game.coin*=bonus;
-
-
-
-if(game.coin>1000000000){
-
-game.coin=1000000000;
-
-}
-
-
-
-}
-
-
-
-
-
-// ================================
-// メイン更新拡張
-// ================================
-
-
-
-setInterval(()=>{
-
-
-populationUpdate();
-
-
-foodProduction();
-
-
-ageCheck();
-
-
-},1000);
-
-
-
-
-
-// ================================
-// 自動セーブ
-// ================================
-
-
-
-setInterval(()=>{
-
-
-save();
-
-
-},30000);// ================================
-// Part4
-// 探索・災害・転生システム
-// ================================
-
-
-
-game.prestige =
-game.prestige || 0;
-
-
-game.gem =
-game.gem || 0;
-
-
-game.explore =
-game.explore || 0;
-
-
-
-game.skills =
-game.skills || {
-
-production:0,
-
-growth:0,
-
-luck:0
-
-};
-
-
-
-
-
-// ================================
-// 探索システム
-// ================================
-
-
-
-let exploreItems=[
-
-{
-name:"古代の宝箱",
-coin:1000
-},
-
-{
-name:"希少鉱石",
-stone:500
-},
-
-{
-name:"未知の技術",
-science:200
-},
-
-{
-name:"巨大な財宝",
-coin:10000
-}
-
-];
-
-
-
-
-
-function exploreWorld(){
-
-
-let cost=100;
-
-
-
-if(game.food<cost){
-
-log("食料不足");
-
-return;
-
-}
-
-
-
-game.food-=cost;
-
-
-
-let item=
-exploreItems[
-Math.floor(
-Math.random()*exploreItems.length
-)
-];
-
-
-
-if(item.coin){
-
-game.coin+=item.coin;
-
-}
-
-
-
-if(item.stone){
-
-game.stone+=item.stone;
-
-}
-
-
-
-if(item.science){
-
-game.science+=item.science;
-
-}
-
-
-
-log(
-"探索成功："+item.name
-);
-
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 災害イベント
-// ================================
-
-
-
-function disaster(){
-
-
-
-let r=Math.random();
-
-
-
-if(r<0.03){
-
-
-
-let loss=
-Math.floor(
-game.coin*0.1
-);
-
-
-
-game.coin-=loss;
-
-
-
-if(game.coin<0)
-game.coin=0;
-
-
-
-log(
-"災害発生！"+
-loss+
-"コインを失った"
-);
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-setInterval(()=>{
-
-
-disaster();
-
-
-},10000);
-
-
-
-
-
-
-
-
-// ================================
-// スキルシステム
-// ================================
-
-
-
-function buySkill(type){
-
-
-let cost=
-100*
-(
-game.skills[type]+1
-);
-
-
-
-if(game.science>=cost){
-
-
-
-game.science-=cost;
-
-
-game.skills[type]++;
-
-
-log(
-"スキル強化："+type
-);
-
-
-
-}else{
-
-
-log("研究ポイント不足");
-
-
-}
-
-
-
-update();
-
-
-}
-
-
-
-
-
-function skillBonus(){
-
-
-
-let p=
-1+
-game.skills.production*0.1;
-
-
-let g=
-1+
-game.skills.growth*0.05;
-
-
-
-game.coin*=p;
-
-
-
-game.population*=g;
-
-
-
-}
-
-
-
-
-
-
-
-
-// ================================
-// 転生システム
-// ================================
-
-
-
-
-function prestigeGame(){
-
-
-
-if(game.level<50){
-
-
-log(
-"レベル50以上必要"
-);
-
-
-return;
-
-}
-
-
-
-let reward=
-Math.floor(
-game.level/10
-);
-
-
-
-game.prestige+=reward;
-
-
-game.gem+=reward;
-
-
-
-game.coin=0;
-
-game.wood=0;
-
-game.stone=0;
-
-game.science=0;
-
-
-game.level=1;
-
-game.xp=0;
-
-game.need=100;
-
-
-
-game.farm=0;
-
-game.mine=0;
-
-game.factory=0;
-
-
-
-log(
-"転生しました 宝石+"+
-reward
-);
-
-
-
-update();
-
-
-
-}
-
-
-
-
-
-// ================================
-// 転生ボーナス
-// ================================
-
-
-
-function prestigeBonus(){
-
-
-
-return 1+
-game.prestige*0.1;
-
-
-
-}
-
-
-
-
-setInterval(()=>{
-
-
-explore++;
-
-
-skillBonus();
-
-
-},5000);// ================================
-// Part5
-// 戦闘・モンスター・装備システム
-// ================================
-
-
-
-game.player =
-game.player || {
-
-hp:100,
-
-attack:10,
-
-defense:5,
-
-level:1,
-
-exp:0
-
-};
-
-
-
-game.equipment =
-game.equipment || {
-
-weapon:0,
-
-armor:0,
-
-ring:0
-
-};
-
-
-
-game.monster =
-game.monster || null;
-
-
-
-
-
-
-// ================================
-// モンスター生成
-// ================================
-
-
-
-let monsterList=[
-
-
-{
-name:"スライム",
-hp:50,
-attack:5,
-reward:100
-},
-
-
-{
-name:"ゴブリン",
-hp:150,
-attack:15,
-reward:500
-},
-
-
-{
-name:"ドラゴン",
-hp:1000,
-attack:80,
-reward:5000
-},
-
-
-{
-name:"古代兵器",
-hp:5000,
-attack:300,
-reward:20000
-}
-
-
-];
-
-
-
-
-
-
-
-
-function createMonster(){
-
-
-let base=
-monsterList[
-Math.floor(
-Math.random()*
-monsterList.length
-)
-];
-
-
-
-game.monster={
-
-name:base.name,
-
-hp:base.hp*
-(1+game.level*0.1),
-
-maxhp:base.hp*
-(1+game.level*0.1),
-
-attack:base.attack,
-
-reward:base.reward
-
-
-};
-
-
-
-log(
-"敵出現："+game.monster.name
-);
-
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 戦闘
-// ================================
-
-
-
-
-function battle(){
-
-
-
-if(!game.monster){
-
-
-createMonster();
-
+if(!running)
 return;
 
 
-}
+
+ball.x+=ball.dx;
+
+ball.y+=ball.dy;
 
 
 
 
-let damage=
-game.player.attack+
-game.equipment.weapon*5;
+// 壁
 
+if(
+ball.x<0 ||
+ball.x>canvas.width
+){
 
-
-game.monster.hp-=damage;
-
-
-
-let enemyDamage=
-game.monster.attack-
-game.player.defense;
-
-
-
-if(enemyDamage<0)
-enemyDamage=0;
-
-
-
-game.player.hp-=enemyDamage;
-
-
-
-
-if(game.monster.hp<=0){
-
-
-
-game.coin+=
-game.monster.reward;
-
-
-game.player.exp+=20;
-
-
-game.gem+=1;
-
-
-log(
-"勝利！報酬 "+
-game.monster.reward
-);
-
-
-
-game.monster=null;
-
-
-checkPlayerLevel();
-
-
-
-}
-else if(game.player.hp<=0){
-
-
-
-game.player.hp=100;
-
-
-log(
-"敗北した..."
-);
-
-
+ball.dx*=-1;
 
 }
 
 
+if(ball.y<0){
 
-
-update();
-
+ball.dy*=-1;
 
 }
 
@@ -1952,43 +280,113 @@ update();
 
 
 
+// パドル
+
+if(
+
+ball.y+ball.size>=paddle.y &&
+
+ball.x>=paddle.x &&
+
+ball.x<=paddle.x+paddle.width
+
+){
+
+ball.dy=-Math.abs(ball.dy);
+
+}
 
 
-// ================================
-// プレイヤーレベル
-// ================================
 
 
 
-function checkPlayerLevel(){
+// 落下
+
+if(ball.y>canvas.height){
 
 
-let need=
-game.player.level*100;
+life--;
+
+
+document.getElementById(
+"life"
+).innerText=life;
+
+
+
+resetBall();
+
+
+
+if(life<=0){
+
+
+running=false;
+
+
+alert("ゲームオーバー");
+
+
+}
+
+
+}
+
+
+
+
+
+
+checkBlock();
+
+draw();
+
+
+requestAnimationFrame(update);
+
+
+
+}
+
+
+
+
+
+function checkBlock(){
+
+
+for(let b of blocks){
+
+
+
+if(!b.alive)
+continue;
 
 
 
 if(
-game.player.exp>=need
+
+ball.x>b.x &&
+ball.x<b.x+b.w &&
+
+ball.y>b.y &&
+ball.y<b.y+b.h
+
 ){
 
 
-game.player.exp-=need;
+b.alive=false;
 
 
-game.player.level++;
+ball.dy*=-1;
 
 
-game.player.attack+=5;
+score+=10;
 
 
-game.player.defense+=2;
-
-
-
-log(
-"戦闘レベルアップ！"
-);
+document.getElementById(
+"score"
+).innerText=score;
 
 
 
@@ -1999,124 +397,43 @@ log(
 
 
 
+}
 
 
 
 
-// ================================
-// 装備強化
-// ================================
 
 
+function resetBall(){
 
 
-function upgradeEquipment(type){
+ball.x=180;
 
+ball.y=400;
 
+ball.dx=4;
 
-let cost=
-1000*
-(
-game.equipment[type]+1
-);
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-game.equipment[type]++;
-
-
-log(
-type+
-"を強化しました"
-);
-
-
-
-}else{
-
-
-log("コイン不足");
+ball.dy=-4;
 
 
 }
 
 
+
+
+
+
+
+function startGame(){
+
+
+if(!running){
+
+running=true;
 
 update();
 
-
 }
-
-
-
-
-
-
-
-// ================================
-// ダンジョン
-// ================================
-
-
-
-game.dungeon =
-game.dungeon || 1;
-
-
-
-function dungeonClear(){
-
-
-
-let enemyPower=
-game.dungeon*500;
-
-
-
-let power=
-game.player.attack*
-10;
-
-
-
-if(power>=enemyPower){
-
-
-
-let reward=
-game.dungeon*10000;
-
-
-
-game.coin+=reward;
-
-
-game.dungeon++;
-
-
-game.gem+=5;
-
-
-
-log(
-"ダンジョンクリア！"
-);
-
-
-
-}else{
-
-
-log(
-"戦力不足"
-);
 
 
 }
@@ -2124,8 +441,31 @@ log(
 
 
 
-update();
+function resetGame(){
 
+
+score=0;
+
+life=3;
+
+
+document.getElementById(
+"score"
+).innerText=0;
+
+
+document.getElementById(
+"life"
+).innerText=3;
+
+
+resetBall();
+
+
+createBlocks();
+
+
+draw();
 
 
 }
@@ -2134,1943 +474,69 @@ update();
 
 
 
+// マウス操作
+
+canvas.addEventListener(
+"mousemove",
+function(e){
 
 
-// ================================
-// 戦闘報酬自動成長
-// ================================
+let rect=
+canvas.getBoundingClientRect();
 
 
-
-setInterval(()=>{
-
-
-if(game.monster){
-
-battle();
-
-
-}
-
-
-},3000);// ================================
-// Part6
-// ペット・ガチャ・図鑑システム
-// ================================
+paddle.x=
+e.clientX-
+rect.left-
+paddle.width/2;
 
 
 
-game.pets =
-game.pets || [];
-
-
-game.gachaCount =
-game.gachaCount || 0;
-
-
-game.collection =
-game.collection || [];
+});
 
 
 
 
 
-// ================================
-// ペットデータ
-// ================================
+
+// スマホ操作
+
+canvas.addEventListener(
+"touchmove",
+function(e){
+
+
+let rect=
+canvas.getBoundingClientRect();
+
+
+paddle.x=
+e.touches[0].clientX-
+rect.left-
+paddle.width/2;
 
 
 
-let petList=[
+e.preventDefault();
 
 
-{
-name:"小さなスライム",
-rarity:"★",
-bonus:0.05
 },
-
-
 {
-name:"森の精霊",
-rarity:"★★",
-bonus:0.15
-},
+passive:false
+});
 
 
-{
-name:"機械生命体",
-rarity:"★★★",
-bonus:0.3
-},
 
 
-{
-name:"古代ドラゴン",
-rarity:"★★★★",
-bonus:0.7
-},
 
 
-{
-name:"神獣フェニックス",
-rarity:"★★★★★",
-bonus:1.5
-}
+createBlocks();
 
-
-];
-
-
-
-
-
-
-// ================================
-// ガチャ
-// ================================
-
-
-
-function gacha(){
-
-
-let cost=5000;
-
-
-
-if(game.coin<cost){
-
-
-log("コイン不足");
-
-
-return;
-
-}
-
-
-
-game.coin-=cost;
-
-
-
-let rate=Math.random();
-
-
-
-let index;
-
-
-
-if(rate<0.5){
-
-index=0;
-
-}
-
-else if(rate<0.8){
-
-index=1;
-
-}
-
-else if(rate<0.95){
-
-index=2;
-
-}
-
-else if(rate<0.995){
-
-index=3;
-
-}
-
-else{
-
-index=4;
-
-}
-
-
-
-let pet=
-petList[index];
-
-
-
-game.pets.push(pet);
-
-
-game.collection.push(
-pet.name
-);
-
-
-
-game.gachaCount++;
-
-
-
-log(
-"ペット獲得："+pet.name+
-" "+pet.rarity
-);
-
-
-
-update();
-
-
-
-}
-
-
-
-
-
-
-// ================================
-// ペット効果
-// ================================
-
-
-
-
-function petBonus(){
-
-
-
-let bonus=1;
-
-
-
-for(
-let i=0;
-i<game.pets.length;
-i++
-){
-
-
-bonus+=
-game.pets[i].bonus;
-
-
-}
-
-
-
-return bonus;
-
-
-
-}
-
-
-
-
-
-// ================================
-// 図鑑
-// ================================
-
-
-
-
-function showCollection(){
-
-
-
-let text="図鑑\n";
-
-
-for(
-let i=0;
-i<petList.length;
-i++
-){
-
-
-
-if(
-game.collection.includes(
-petList[i].name
-)
-){
-
-
-text+=
-"✅ "+
-petList[i].name+
-"\n";
-
-
-}
-
-else{
-
-
-text+=
-"❌ 未発見\n";
-
-
-}
-
-
-
-}
-
-
-
-alert(text);
-
-
-
-}
-
-
-
-
-
-
-// ================================
-// ペット売却
-// ================================
-
-
-
-function sellPet(){
-
-
-if(game.pets.length<=0){
-
-
-log("ペットなし");
-
-
-return;
-
-
-}
-
-
-
-let pet=
-game.pets.shift();
-
-
-
-let value=
-Math.floor(
-1000*
-(1+pet.bonus)
-);
-
-
-
-game.coin+=value;
-
-
-
-log(
-pet.name+
-"を売却 +"+
-value
-);
-
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// ペットレベル
-// ================================
-
-
-
-game.petLevel =
-game.petLevel || 1;
-
-
-
-
-function trainPet(){
-
-
-let cost=
-game.petLevel*2000;
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-game.petLevel++;
-
-
-log(
-"ペット訓練成功"
-);
-
-
-
-}else{
-
-
-log("費用不足");
-
-
-}
-
-
-
-update();
-
-
-}
-
-
-
-
-
-
-// ================================
-// 生産倍率へ統合
-// ================================
-
-
-
-function totalProductionBonus(){
-
-
-
-let bonus=1;
-
-
-
-bonus*=petBonus();
-
-
-bonus*=prestigeBonus();
-
-
-
-return bonus;
-
-
-}
-
-
-
-
-
-// 既存生産を強化する補正
-
-setInterval(()=>{
-
-
-let b=
-totalProductionBonus();
-
-
-
-game.coin+=
-game.worker*
-b;
-
-
-},1000);// ================================
-// Part7
-// 国家・領土・貿易システム
-// ================================
-
-
-
-game.country =
-game.country || {
-
-name:"小さな村",
-
-power:1,
-
-territory:1,
-
-population:10
-
-};
-
-
-
-game.trade =
-game.trade || {
-
-level:0,
-
-income:0
-
-};
-
-
-
-game.resources =
-game.resources || {
-
-gold:0,
-
-crystal:0,
-
-oil:0
-
-};
-
-
-
-
-
-
-
-// ================================
-// 領土拡張
-// ================================
-
-
-
-function expandTerritory(){
-
-
-
-let cost=
-game.country.territory*
-10000;
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-game.country.territory++;
-
-
-game.country.power+=10;
-
-
-
-log(
-"領土拡大！"
-);
-
-
-
-}else{
-
-
-log(
-"資金不足"
-);
-
-
-}
-
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 資源採掘
-// ================================
-
-
-
-function rareResource(){
-
-
-
-let amount=
-game.country.territory*
-0.5;
-
-
-
-game.resources.gold+=amount;
-
-
-
-if(
-game.age>=3
-){
-
-
-game.resources.oil+=amount*0.5;
-
-
-}
-
-
-
-if(
-game.age>=5
-){
-
-
-game.resources.crystal+=amount*0.2;
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-
-// ================================
-// 貿易
-// ================================
-
-
-
-function tradeUpgrade(){
-
-
-
-let cost=
-50000*
-(game.trade.level+1);
-
-
-
-if(game.coin>=cost){
-
-
-game.coin-=cost;
-
-
-game.trade.level++;
-
-
-log(
-"貿易レベルアップ"
-);
-
-
-}else{
-
-
-log(
-"貿易資金不足"
-);
-
-
-}
-
-
-update();
-
-
-}
-
-
-
-
-
-
-function tradeIncome(){
-
-
-
-let income=
-
-
-game.trade.level*
-
-100;
-
-
-
-game.coin+=income;
-
-
-
-game.trade.income+=income;
-
-
-
-}
-
-
-
-
-
-
-
-
-// ================================
-// 国家技術
-// ================================
-
-
-
-game.tech =
-game.tech || {
-
-military:0,
-
-economy:0,
-
-science:0
-
-};
-
-
-
-
-
-
-function upgradeTech(type){
-
-
-
-let cost=
-10000*
-(
-game.tech[type]+1
-);
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-game.tech[type]++;
-
-
-log(
-"国家技術発展："+type
-);
-
-
-
-}else{
-
-
-log(
-"研究資金不足"
-);
-
-
-}
-
-
-
-update();
-
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 軍事力
-// ================================
-
-
-
-function militaryPower(){
-
-
-
-return (
-
-game.country.power+
-
-game.tech.military*100+
-
-game.player.attack*10
-
-);
-
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 国家イベント
-// ================================
-
-
-
-let nationEvents=[
-
-
-"近隣国と交易成功",
-
-"新しい土地を発見",
-
-"技術革新が起きた",
-
-"資源ブーム発生"
-
-];
-
-
-
-
-
-
-function nationEvent(){
-
-
-
-if(Math.random()<0.03){
-
-
-
-let event=
-nationEvents[
-Math.floor(
-Math.random()*
-nationEvents.length
-)
-];
-
-
-
-let reward=
-Math.floor(
-Math.random()*50000
-);
-
-
-
-game.coin+=reward;
-
-
-log(
-event+
-" +"+
-reward+
-"コイン"
-);
-
-
-
-update();
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-setInterval(()=>{
-
-
-rareResource();
-
-
-tradeIncome();
-
-
-nationEvent();
-
-
-},5000);// ================================
-// Part8
-// ミッション・ログイン報酬・ランキング
-// ================================
-
-
-
-game.missions =
-game.missions || {
-
-collect:0,
-
-build:0,
-
-battle:0
-
-};
-
-
-
-game.login =
-game.login || {
-
-days:0,
-
-last:0
-
-};
-
-
-
-game.rank =
-game.rank || {
-
-score:0
-
-};
-
-
-
-
-
-
-
-// ================================
-// ミッションシステム
-// ================================
-
-
-
-let missionData=[
-
-
-{
-id:"collect",
-name:"資源を100回集める",
-goal:100,
-reward:5000
-},
-
-
-{
-id:"build",
-name:"建物を10個作る",
-goal:10,
-reward:20000
-},
-
-
-{
-id:"battle",
-name:"敵を20体倒す",
-goal:20,
-reward:50000
-}
-
-
-];
-
-
-
-
-
-
-function missionCheck(){
-
-
-
-for(
-let i=0;
-i<missionData.length;
-i++
-){
-
-
-let m=
-missionData[i];
-
-
-
-if(
-game.missions[m.id]>=m.goal
-){
-
-
-let key=
-"mission_"+m.id;
-
-
-
-if(
-!game[key]
-){
-
-
-
-game[key]=true;
-
-
-game.coin+=m.reward;
-
-
-
-log(
-"ミッション達成："+
-m.name
-);
-
-
-
-}
-
-
-}
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-
-
-// ================================
-// 資源採取カウント追加
-// ================================
-
-
-
-
-let oldCollect=collect;
-
-
-
-collect=function(){
-
-
-
-oldCollect();
-
-
-game.missions.collect++;
-
-
-missionCheck();
-
-
-};
-
-
-
-
-
-
-
-
-
-// ================================
-// 建築カウント追加
-// ================================
-
-
-
-let oldBuild=build;
-
-
-
-build=function(type){
-
-
-
-oldBuild(type);
-
-
-
-game.missions.build++;
-
-
-missionCheck();
-
-
-};
-
-
-
-
-
-
-
-// ================================
-// 戦闘カウント追加
-// ================================
-
-
-
-let oldBattle=battle;
-
-
-
-battle=function(){
-
-
-
-oldBattle();
-
-
-
-if(!game.monster){
-
-game.missions.battle++;
-
-}
-
-
-missionCheck();
-
-
-};
-
-
-
-
-
-
-
-
-// ================================
-// ログインボーナス
-// ================================
-
-
-
-function loginBonus(){
-
-
-
-let today=
-new Date()
-.toDateString();
-
-
-
-if(
-game.login.last!==today
-){
-
-
-
-game.login.last=today;
-
-
-game.login.days++;
-
-
-
-let reward=
-1000*
-game.login.days;
-
-
-
-game.coin+=reward;
-
-
-
-log(
-"ログイン報酬 +"+
-reward
-);
-
-
-
-save();
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-// ================================
-// スコア計算
-// ================================
-
-
-
-function calculateScore(){
-
-
-
-game.rank.score=
-
-Math.floor(
-
-game.level*100+
-
-game.coin/10+
-
-game.country.territory*1000+
-
-game.prestige*5000+
-
-game.player.level*200
-
-);
-
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// ランキング表示
-// ================================
-
-
-
-function showRank(){
-
-
-
-calculateScore();
-
-
-
-alert(
-
-"文明スコア\n"+
-game.rank.score+
-"\n\n"+
-"あなたの文明は"+
-game.country.name
-
-);
-
-
-
-}
-
-
-
-
-
-
-
-
-// ================================
-// 自動処理
-// ================================
-
-
-
-setInterval(()=>{
-
-
-loginBonus();
-
-
-calculateScore();
-
-
-missionCheck();
-
-
-
-},60000);// ================================
-// Part9
-// エンドコンテンツ・最終強化
-// ================================
-
-
-
-game.endGame =
-game.endGame || {
-
-universe:0,
-
-dimension:0,
-
-godPower:0
-
-};
-
-
-
-
-
-// ================================
-// 宇宙進化
-// ================================
-
-
-
-function universeUpgrade(){
-
-
-let cost=
-1000000*
-(
-game.endGame.universe+1
-);
-
-
-
-if(game.coin>=cost){
-
-
-
-game.coin-=cost;
-
-
-game.endGame.universe++;
-
-
-game.endGame.godPower+=10;
-
-
-
-log(
-"宇宙技術を獲得"
-);
-
-
-
-}else{
-
-
-log(
-"宇宙開発費不足"
-);
-
-
-}
-
-
-update();
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 異次元探索
-// ================================
-
-
-
-function dimensionExplore(){
-
-
-
-if(
-game.endGame.universe<5
-){
-
-
-log(
-"宇宙レベル5が必要"
-);
-
-
-return;
-
-}
-
-
-
-
-let reward=
-Math.floor(
-Math.random()*1000000
-)+100000;
-
-
-
-game.coin+=reward;
-
-
-game.endGame.dimension++;
-
-
-
-log(
-"異次元資源獲得 +"+
-reward
-);
-
-
-
-update();
-
-
-
-}
-
-
-
-
-
-
-
-// ================================
-// 神の力
-// ================================
-
-
-
-function godUpgrade(){
-
-
-
-let cost=
-100*
-(
-game.endGame.godPower+1
-);
-
-
-
-if(game.gem>=cost){
-
-
-
-game.gem-=cost;
-
-
-game.endGame.godPower++;
-
-
-log(
-"神の力強化"
-);
-
-
-
-}else{
-
-
-log(
-"宝石不足"
-);
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-// ================================
-// 最終倍率
-// ================================
-
-
-
-function finalBonus(){
-
-
-
-return (
-
-1+
-
-game.endGame.godPower*0.01+
-
-game.endGame.dimension*0.05
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-// ================================
-// 実績拡張
-// ================================
-
-
-
-game.titles =
-game.titles || [];
-
-
-
-
-function titleCheck(){
-
-
-
-if(
-game.country.territory>=100 &&
-!game.titles.includes("大帝国")
-){
-
-
-
-game.titles.push(
-"大帝国"
-);
-
-
-game.coin+=100000;
-
-
-
-log(
-"称号獲得：大帝国"
-);
-
-
-}
-
-
-
-
-
-if(
-game.prestige>=10 &&
-!game.titles.includes("永遠の文明")
-){
-
-
-
-game.titles.push(
-"永遠の文明"
-);
-
-
-game.gem+=100;
-
-
-
-log(
-"称号獲得：永遠の文明"
-);
-
-
-}
-
-
-
-}
-
-
-
-
-
-
-// ================================
-// 難易度調整
-// ================================
-
-
-
-function difficultyScale(){
-
-
-
-let scale=
-
-1+
-
-game.level*0.02+
-
-game.age*0.1;
-
-
-
-return scale;
-
-
-
-}
-
-
-
-
-
-
-// ================================
-// 強化された生産処理
-// ================================
-
-
-
-setInterval(()=>{
-
-
-let bonus=
-
-finalBonus();
-
-
-let scale=
-
-difficultyScale();
-
-
-
-game.coin+=
-
-(game.farm*5+
-
-game.mine*15+
-
-game.factory*50)
-
-*
-
-bonus;
-
-
-
-game.science+=
-
-game.lab || 0;
-
-
-
-titleCheck();
-
-
-
-update();
-
-
-
-},1000);// ================================
-// Part10
-// 最終統合・UI追加・終了処理
-// ================================
-
-
-
-// ================================
-// 追加ボタン生成
-// ================================
-
-
-
-function createExtraUI(){
-
-
-
-let app=
-document.getElementById("app");
-
-
-
-let box=
-document.createElement("div");
-
-box.className="panel";
-
-
-
-box.innerHTML=`
-
-<h2>追加システム</h2>
-
-<button onclick="advancedBuild('farm')">
-高度農場建設
-</button>
-
-<button onclick="advancedBuild('mine')">
-高度鉱山建設
-</button>
-
-<button onclick="advancedBuild('factory')">
-高度工場建設
-</button>
-
-
-<button onclick="exploreWorld()">
-探索する
-</button>
-
-
-<button onclick="battle()">
-戦闘
-</button>
-
-
-<button onclick="gacha()">
-ガチャ
-</button>
-
-
-<button onclick="showCollection()">
-ペット図鑑
-</button>
-
-
-<button onclick="expandTerritory()">
-領土拡大
-</button>
-
-
-<button onclick="tradeUpgrade()">
-貿易強化
-</button>
-
-
-<button onclick="universeUpgrade()">
-宇宙開発
-</button>
-
-
-<button onclick="dimensionExplore()">
-異次元探索
-</button>
-
-
-<button onclick="showRank()">
-文明スコア確認
-</button>
-
-
-`;
-
-
-
-app.appendChild(box);
-
-
-
-}
-
-
-
-
-createExtraUI();
-
-
-
-
-
-
-
-
-// ================================
-// 安全保存
-// ================================
-
-
-
-function safeSave(){
-
-
-try{
-
-
-save();
-
-
-}catch(e){
-
-
-console.log(e);
-
-
-}
-
-
-}
-
-
-
-
-setInterval(()=>{
-
-
-safeSave();
-
-
-},60000);
-
-
-
-
-
-
-
-// ================================
-// 起動時処理
-// ================================
-
-
-
-window.onload=function(){
-
-
-load();
-
-
-update();
-
-
-};
-
-
-
-
-
-
-
-// ================================
-// 数値暴走防止
-// ================================
-
-
-
-setInterval(()=>{
-
-
-let keys=[
-
-"coin",
-
-"wood",
-
-"stone",
-
-"science",
-
-"food"
-
-];
-
-
-
-for(
-let k of keys
-){
-
-
-
-if(
-game[k]>999999999999
-){
-
-
-game[k]=999999999999;
-
-
-}
-
-
-
-if(
-game[k]<0
-){
-
-
-game[k]=0;
-
-
-}
-
-
-
-}
-
-
-
-},5000);
-
-
-
-
-
-
-
-// ================================
-// ゲーム完成表示
-// ================================
-
-
-
-log(
-"文明進化ゲーム 起動完了"
-);
-
-
+draw();
 
 
 </script>
 
 
 </body>
-
 </html>
