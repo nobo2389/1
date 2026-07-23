@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" 
   content="width=device-width">
-<title>BOSS BATTLE</title>
+<title>SOUND BOSS</title>
 <style>
   * { margin:0; padding:0; }
   body {
@@ -48,6 +48,39 @@ const ctx = cv.getContext("2d");
 let score = 0, lives = 3;
 let gOver = false, gWin = false;
 let skT = 0, skX = 0, skY = 0;
+
+// サウンド生成システム (Web Audio API)
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || 
+      window.webkitAudioContext)();
+  }
+}
+
+// 効果音を発音する関数
+function playSound(freq, type, duration, endFreq = 0) {
+  if (!audioCtx) return;
+  try {
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (endFreq > 0) {
+      osc.frequency.exponentialRampToValueAtTime(
+        endFreq, audioCtx.currentTime + duration
+      );
+    }
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.01, audioCtx.currentTime + duration
+    );
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
 
 // パドル / ミサイル / 敵の弾
 let pwd = 60, pX = 130, pH = 8;
@@ -113,16 +146,29 @@ function move(x) {
   let mX = x - r.left;
   if(mX > 0 && mX < cv.width) pX = mX - pwd/2;
 }
-document.addEventListener("mousemove", (e)=>move(e.clientX));
+
+// 初回操作時に音声を有効化
+function activateInput(clientX) {
+  initAudio();
+  move(clientX);
+}
+
+document.addEventListener("mousemove", (e)=>activateInput(e.clientX));
 cv.addEventListener("touchmove", (e)=>{
-  move(e.touches.clientX); e.preventDefault();
+  activateInput(e.touches.clientX); e.preventDefault();
 }, {passive:false});
 
 function hitBoss(dmg) {
   boss.hp -= dmg;
   skT = 10;
+  // ボス被弾音 (低い爆発音)
+  playSound(120, "sawtooth", 0.1, 40);
   if(boss.hp <= 0) {
     boss.hp = 0; gWin = true;
+    // クリアファンファール
+    setTimeout(()=>playSound(523, "square", 0.1), 0);
+    setTimeout(()=>playSound(659, "square", 0.1), 150);
+    setTimeout(()=>playSound(783, "square", 0.3), 300);
   }
   let pct = Math.floor((boss.hp/boss.maxHp)*100);
   document.getElementById("bhp").innerText = "BOSS HP: "+pct+"%";
@@ -143,6 +189,8 @@ function update() {
     eBs.push({x: boss.x+50, y: boss.y+30, vy: 3});
     eBs.push({x: boss.x+150, y: boss.y+30, vy: 3});
     boss.bTimer = 0;
+    // ボス攻撃音
+    playSound(180, "triangle", 0.05);
   }
 
   // 敵の弾の移動
@@ -152,7 +200,11 @@ function update() {
     // パドルにヒット
     if(eb.y >= cv.height-pH && eb.x > pX && eb.x < pX+pwd) {
       eBs.splice(i,1); lives--;
-      if(lives <= 0) gOver = true;
+      playSound(150, "sawtooth", 0.3); // ダメージ音
+      if(lives <= 0) {
+        gOver = true;
+        playSound(300, "sawtooth", 0.5, 50); // ゲームオーバー音
+      }
       continue;
     }
   }
@@ -160,6 +212,7 @@ function update() {
   // ホーミングミサイル発射
   if(hmActive && Math.random()<0.1) {
     ms.push({x: pX+pwd/2, y: cv.height-pH});
+    playSound(600, "triangle", 0.05, 900); // ミサイル発射音
   }
   for(let i=ms.length-1; i>=0; i--) {
     let m = ms[i];
@@ -177,15 +230,24 @@ function update() {
   for(let i=balls.length-1; i>=0; i--) {
     let b = balls[i]; b.x += b.dx; b.y += b.dy;
 
-    if(b.x+b.dx > cv.width-b.r || b.x+b.dx < b.r) b.dx = -b.dx;
-    if(b.y+b.dy < b.r) b.dy = -b.dy;
+    if(b.x+b.dx > cv.width-b.r || b.x+b.dx < b.r) {
+      b.dx = -b.dx; playSound(400, "sine", 0.05); // 壁反射音
+    }
+    if(b.y+b.dy < b.r) {
+      b.dy = -b.dy; playSound(400, "sine", 0.05);
+    }
     else if(b.y+b.dy > cv.height-b.r-pH) {
       if(b.x > pX && b.x < pX+pwd) {
         let h = (b.x-(pX+pwd/2))/(pwd/2);
         b.dx = h * bSpd; b.dy = -Math.sqrt(bSpd*bSpd-b.dx*b.dx);
         if(Math.abs(b.dy)<2) b.dy = -2;
+        playSound(450, "sine", 0.08, 600); // パドル反射音
       }
-      else if(b.y+b.dy > cv.height-b.r) { balls.splice(i, 1); continue; }
+      else if(b.y+b.dy > cv.height-b.r) { 
+        balls.splice(i, 1); 
+        playSound(200, "sine", 0.1); // ボール落下音
+        continue; 
+      }
     }
 
     // ボスとボールの衝突
@@ -202,6 +264,7 @@ function update() {
             b.dy = -b.dy; bk.st = 0; score += 10;
             document.getElementById("sc").innerText = "SCORE: "+score;
             addPt(b.x, b.y, bk.c); drop(b.x+bW/2, b.y+bH);
+            playSound(300, "square", 0.08, 800); // ブロック破壊音
           }
         }
       }
@@ -209,7 +272,14 @@ function update() {
   }
 
   if(balls.length === 0) {
-    lives--; if(lives <= 0) gOver = true; else addBall(160, 340, 3, -4);
+    lives--; 
+    playSound(150, "sawtooth", 0.3);
+    if(lives <= 0) {
+      gOver = true;
+      playSound(300, "sawtooth", 0.5, 50);
+    } else {
+      addBall(160, 340, 3, -4);
+    }
   }
 
   // エフェクト＆アイテム
@@ -220,6 +290,8 @@ function update() {
   for(let i=its.length-1; i>=0; i--) {
     let it = its[i]; it.y += 2;
     if(it.y >= cv.height-pH && it.x > pX && it.x < pX+pwd) {
+      // アイテム取得音 (ピコピーン！)
+      playSound(500, "square", 0.05, 1000);
       if(it.t === 'M') { addBall(it.x, 340, -2, -4); addBall(it.x, 340, 2, -4); } 
       else { hmActive = true; setTimeout(()=>hmActive=false, 6000); }
       its.splice(i, 1); continue;
@@ -272,6 +344,7 @@ function draw() {
 }
 
 cv.addEventListener("click", () => {
+  initAudio();
   if(gOver || gWin) {
     score = 0; lives = 3; gOver = false; gWin = false; hmActive = false;
     document.getElementById("sc").innerText = "SCORE: 0";
