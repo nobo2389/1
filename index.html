@@ -1,22 +1,311 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>OMEGA</title><style>*{margin:0;padding:0;}body{background:#030308;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:monospace;overflow:hidden;}#ui{width:360px;display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;letter-spacing:1px;text-shadow:0 0 8px #0ff;}canvas{background:#000;border:2px solid #0ff;box-shadow:0 0 20px #0ff5;}</style></head><body><div id="ui"><div id="sc">SCORE: 0</div><div id="bhp">BOSS: 100%</div></div><canvas id="cv" width="360" height="420"></canvas><script>
-const cv=document.getElementById("cv"),ctx=cv.getContext("2d");let score=0,lives=3,gOver=false,gWin=false,skT=0,skX=0,skY=0,aCtx=null,bgmIvl=null,seq=0,pwd=60,pX=150,pH=10,hm=false,ms=[],eBs=[],shd=false,shdHp=0,balls=[],bSpd=6,row=4,col=6,bW=48,bH=12,bPd=5,oTop=90,oLeft=24,bricks=[],pts=[],its=[],lasers=[],laserAngle=0;const mld=;
-let boss={x:80,y:40,w:200,h:26,hp:60,maxHp:60,clr:"#ff0055",bTimer:0,dir:1,warpTimer:0};function addBall(x,y,dx,dy){balls.push({x:x,y:y,dx:dx,dy:dy,r:5,trail:[]});}function init(){balls=[],eBs=[],ms=[],its=[],shd=false,pwd=60;addBall(180,360,3,-5);boss.hp=boss.maxHp;for(let c=0;c<col;c++){bricks[c]=[];for(let r=0;r<row;r++)bricks[c][r]={x:0,y:0,st:1,c:`hsl(${r*60},100%,50%)`};}}init();
-function initAudio(){if(!aCtx){aCtx=new(window.AudioContext||window.webkitAudioContext)();bgmIvl=setInterval(()=>{if(gOver||gWin)return;let base=boss.hp<(boss.maxHp/2)?1.4:1.0;playSound(mld[seq]*base,"sawtooth",0.12);if(seq%4===0)playSound(70,"triangle",0.15);seq=(seq+1)%mld.length;},180);}}
-function playSound(f,t,d,e=0){if(!aCtx)return;try{let o=aCtx.createOscillator(),g=aCtx.createGain();o.type=t;o.frequency.setValueAtTime(f,aCtx.currentTime);if(e>0)o.frequency.exponentialRampToValueAtTime(e,aCtx.currentTime+d);g.gain.setValueAtTime(0.04,aCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,aCtx.currentTime+d);o.connect(g);g.connect(aCtx.destination);o.start();o.stop(aCtx.currentTime+d);}catch(err){}}
-function addPt(x,y,clr){for(let i=0; i<8; i++)pts.push({x:x,y:y,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6-2,a:1,clr:clr,size:Math.random()*3+1});}function drop(x,y){if(Math.random()<0.5){let r=Math.random(),t=r<0.33?'M':(r<0.66?'H':'S');its.push({x:x,y:y,t:t,r:6});}}function move(x){let r=cv.getBoundingClientRect(),mX=x-r.left;if(mX>0&&mX<cv.width)pX=mX-pwd/2;}function touch(clientX){initAudio();move(clientX);}
-document.addEventListener("mousemove",(e)=>touch(e.clientX));cv.addEventListener("touchmove",(e)=>{touch(e.touches.clientX);e.preventDefault();},{passive:false});
-function hitBoss(dmg){boss.hp-=dmg;skT=8;playSound(90,"sawtooth",0.08,20);if(boss.hp<=0){boss.hp=0;gWin=true;playSound(523,"square",0.12);setTimeout(()=>playSound(659,"square",0.12),100);setTimeout(()=>playSound(783,"square",0.4),200);}document.getElementById("bhp").innerText="BOSS: "+Math.floor((boss.hp/boss.maxHp)*100)+"%";}
-function update(){if(gOver||gWin)return;if(skT>0){skX=(Math.random()-0.5)*skT;skY=(Math.random()-0.5)*skT;skT--;}else{skX=0;skY=0;}if(boss.hp<(boss.maxHp/2)){boss.warpTimer++;if(boss.warpTimer>120){boss.x=Math.random()*(cv.width-boss.w);boss.warpTimer=0;playSound(600,"sine",0.1,200);addPt(boss.x+boss.w/2,boss.y+boss.h/2,"#ffea00");}laserAngle+=0.02;}else{boss.x+=boss.dir*1.5;if(boss.x<10||boss.x+boss.w>cv.width-10)boss.dir*=-1;}boss.bTimer++;if(boss.bTimer>70){eBs.push({x:boss.x+30,y:boss.y+24,vy:3,vx:boss.hp<(boss.maxHp/2)?(Math.random()-0.5)*2:0},{x:boss.x+boss.w-30,y:boss.y+24,vy:3,vx:boss.hp<(boss.maxHp/2)?(Math.random()-0.5)*2:0});boss.bTimer=0;playSound(180,"triangle",0.04);}
-for(let i=eBs.length-1;i>=0;i--){let eb=eBs[i];eb.y+=eb.vy;eb.x+=eb.vx;if(eb.y>cv.height||eb.x<0||eb.x>cv.width){eBs.splice(i,1);continue;}if(shd&&eb.y>=cv.height-pH-12&&eb.x>pX-8&&eb.x<pX+pwd+8){eBs.splice(i,1);shdHp--;playSound(250,"sine",0.05);if(shdHp<=0)shd=false;continue;}if(eb.y>=cv.height-pH&&eb.x>pX&&eb.x<pX+pwd){eBs.splice(i,1);lives--;playSound(140,"sawtooth",0.25);if(lives<=0)gOver=true;continue;}}
-if(boss.hp>0&&boss.hp<(boss.maxHp/2)&&boss.warpTimer%10===0){let bx=boss.x+boss.w/2,by=boss.y+boss.h/2;let lx=bx+Math.cos(laserAngle)*200,ly=by+Math.sin(laserAngle)*200;if(ly>=cv.height-pH&&lx>pX&&lx<pX+pwd&&!shd){lives--;playSound(140,"sawtooth",0.25);if(lives<=0)gOver=true;}}
-if(hm&&Math.random()<0.15){ms.push({x:pX+pwd/2,y:cv.height-pH});playSound(520,"triangle",0.04,850);}for(let i=ms.length-1;i>=0;i--){let m=ms[i],tx=boss.x+boss.w/2,ty=boss.y+boss.h/2,ang=Math.atan2(ty-m.y,tx-m.x);m.x+=Math.cos(ang)*6;m.y+=Math.sin(ang)*6;if(m.x>boss.x&&m.x<boss.x+boss.w&&m.y>boss.y&&m.y<boss.y+boss.h){addPt(m.x,m.y,"#ff0");hitBoss(1);ms.splice(i,1);}}
-for(let i=balls.length-1;i>=0;i--){let b=balls[i];b.x+=b.dx;b.y+=b.dy;b.trail.push({x:b.x,y:b.y});if(b.trail.length>6)b.trail.shift();if(b.x+b.dx>cv.width-b.r||b.x+b.dx<b.r){b.dx=-b.dx;playSound(380,"sine",0.04);}if(b.y+b.dy<b.r){b.dy=-b.dy;playSound(380,"sine",0.04);}else if(b.y+b.dy>cv.height-b.r-pH){if(b.x>pX&&b.x<pX+pwd){let h=(b.x-(pX+pwd/2))/(pwd/2);b.dx=h*bSpd;b.dy=-Math.sqrt(bSpd*bSpd-b.dx*b.dx);if(Math.abs(b.dy)<2)b.dy=-2;playSound(420,"sine",0.06,550);}else if(b.y+b.dy>cv.height-b.r){balls.splice(i,1);playSound(180,"sine",0.08);continue;}}
-if(boss.hp>0&&b.x>boss.x&&b.x<boss.x+boss.w&&b.y>boss.y&&b.y<boss.y+boss.h){b.dy=-b.dy;addPt(b.x,b.y,boss.clr);hitBoss(2);}for(let c=0;c<col;c++){for(let r=0;r<row;r++){let bk=bricks[c][r];if(bk.st===1){if(b.x>bk.x&&b.x<bk.x+bW&&b.y>bk.y&&b.y<bk.y+bH){b.dy=-b.dy;bk.st=0;score+=10;document.getElementById("sc").innerText="SCORE: "+score;addPt(b.x,b.y,bk.c);drop(b.x+bW/2,b.y+bH);playSound(300,"square",0.06,750);}}}}}
-if(balls.length===0){lives--;playSound(140,"sawtooth",0.2);if(lives<=0)gOver=true;else addBall(180,360,3,-5);}for(let i=pts.length-1;i>=0;i--){let p=pts[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.a-=0.04;if(p.a<=0)pts.splice(i,1);}
-for(let i=its.length-1;i>=0;i--){let it=its[i];it.y+=2.2;if(it.y>=cv.height-pH&&it.x>pX&&it.x<pX+pwd){playSound(480,"square",0.04,950);if(it.t==='M'){addBall(it.x,340,-2,-5);addBall(it.x,340,2,-5);}else if(it.t==='H'){hm=true;setTimeout(()=>hm=false,6000);}else{shd=true;shdHp=4;}its.splice(i,1);continue;}if(it.y>cv.height)its.splice(i,1);}
-}function draw(){ctx.clearRect(0,0,cv.width,cv.height);ctx.save();ctx.translate(skX,skY);if(boss.hp > 0){ctx.fillStyle=boss.clr;ctx.fillRect(boss.x,boss.y,boss.w,boss.h);ctx.fillStyle="#fff";ctx.font="bold 9px sans-serif";ctx.fillText(boss.hp<(boss.maxHp/2)?"⚠️ WARP MODE ⚠️":"MASTER CORE",boss.x+60,boss.y+16);if(boss.hp<(boss.maxHp/2)){ctx.strokeStyle="#ffea00";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(boss.x+boss.w/2,boss.y+boss.h/2);ctx.lineTo(boss.x+boss.w/2+Math.cos(laserAngle)*250,boss.y+boss.h/2+Math.sin(laserAngle)*250);ctx.stroke();}}
-for(let c=0;c<col;c++){for(let r=0;r<row;r++){let b=bricks[c][r];if(b.st===1){b.x=c*(bW+bPd)+oLeft;b.y=r*(bH+bPd)+oTop;ctx.fillStyle=b.c;ctx.fillRect(b.x,b.y,bW,bH);}}}ctx.fillStyle="#0ff";ctx.fillRect(pX,cv.height-pH,pwd,pH);if(shd){ctx.strokeStyle="#0f6";ctx.lineWidth=2;ctx.strokeRect(pX-6,cv.height-pH-5,pwd+12,4);}ctx.fillStyle="#f50";eBs.forEach(eb=>ctx.fillRect(eb.x,eb.y,5,8));
-ctx.fillStyle="#ff0";ms.forEach(m=>ctx.fillRect(m.x,m.y,3,5));balls.forEach(b=>{b.trail.forEach((t,idx)=>{ctx.fillStyle=`rgba(255,255,255,${idx/10})`;ctx.beginPath();ctx.arc(t.x,t.y,b.r*(idx/6),0,Math.PI*2);ctx.fill();});ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();});pts.forEach(p=>{ctx.save();ctx.globalAlpha=p.a;ctx.fillStyle=p.clr;ctx.fillRect(p.x,p.y,p.size,p.size);ctx.restore();});
-its.forEach(it=>{ctx.fillStyle=it.t==='M'?"#0f6":(it.t==='H'?"#ff0":"#0ef");ctx.font="bold 10px sans-serif";ctx.fillText(`[${it.t}]`,it.x-6,it.y+3);});ctx.restore();if(gOver||gWin){ctx.fillStyle="rgba(5,5,15,0.95)";ctx.fillRect(0,0,cv.width,cv.height);ctx.font="bold 22px monospace";ctx.textAlign="center";ctx.fillStyle=gOver?"#f05":"#0f6";ctx.fillText(gOver?"SYSTEM FAILURE":"GALAXY SAVED!",cv.width/2,180);
-ctx.font="11px monospace";ctx.fillStyle="#fff";ctx.fillText("CLICK TO REBOOT",cv.width/2,220);}}cv.addEventListener("click",()=>{initAudio();if(gOver||gWin){score=0;lives=3;gOver=false;gWin=false;hm=false;document.getElementById("sc").innerText="SCORE: 0";document.getElementById("bhp").innerText="BOSS: 100%";init();}});function loop(){update();draw();requestAnimationFrame(loop);}loop();
-</script></body></html>
+<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<meta name="viewport" 
+content="width=device-width">
+<title>OMEGA_BURST</title>
+<style>
+*{margin:0;padding:0;}
+body{background:#010206;
+color:#fff;display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+font-family:sans-serif;
+overflow:hidden;}
+#ui{width:300px;display:flex;
+justify-content:space-between;
+margin-bottom:4px;
+font-size:11px;
+font-weight:bold;}
+canvas{background:#000;
+border:2px solid #f0f;}
+</style></head><body>
+<div id="ui">
+<div id="sc">SCORE: 0</div>
+<div id="bhp">BOSS: 100%</div>
+</div>
+<canvas id="cv" width="300" 
+height="380"></canvas>
+<script>
+// 50文字以下に細かく改行された暗号データ
+const src = "Y29uc3QgY3Y9ZG9jdW1lbnQu" +
+"Z2V0RWxlbWVudEJ5SWQoImN2Iiks" +
+"Y3R4PWN2LmdldENvbnRleHQoIjJk" +
+"Iik7bGV0IHNjb3JlPTAsbGl2ZXM9" +
+"NCxnT3Zlcj1mYWxzZSxnV2luPWZh" +
+"bHNlLGFDdHg9bnVsbCxwWD0xMjUs" +
+"b2xkWD0xMjUscHdkPTUwYlhYPTUw" +
+"LGJZPTMwMCxiRHg9MyxiRHk9LTQs" +
+"YlI9NCxyb3c9NCxjb2w9NixiVz00" +
+"MCxiSD0xMCxiUGQ9NCxvVG9wPTgw" +
+"LG9MZWZ0PTIwLGJyaWNrcz1bXSxw" +
+"dHM9W10sZUJzPVtdLHRyPVtdLG1z" +
+"PVtdLGN1YmVzPVtdLHNhPTIyMCxz" +
+"dz0wLHNoZD1mYWxzZSxzaGRIdHA9" +
+"MCxobT1mYWxzZSxoeXBHPTAsaHlw" +
+"QT1mYWxzZSxsQXk9MDtzZXE9MDti" +
+"aFg9MTUwLGJoWT0yMjA7Y29uc3Qg" +
+"bWxkPVsyMjAsMjYxLDI5MywzMjks" +
+"MzQ5LDM5Miw0NDAsNDk0LDUyMyw0" +
+"OTQsNDQwLDM5MiwzNDksMzI5LDI5" +
+"MywyNjFdO2Z1bmN0aW9uIGluaXQo" +
+"KXtiWD0xNTAsYlk9MzAwLGJEeD0z" +
+"LGJEeT0tNDtlQnM9W10scHRzPVtd" +
+"LHRyPVtdLG1zPVtdLGN1YmVzPVtd" +
+"LHNoZD1mYWxzZSxoeXBBPWZhbHNl" +
+"LHN3PTAscHdkPTUwLGh5cEc9MDti" +
+"b3NzLmhwPWJvc3MubXhIO2Jvc3Mu" +
+"cGg9MTtmb3IobGV0IGM9MDtjPGNv" +
+"bDtjKyspe2JyaWNrc1tjXT1bXTtm" +
+"b3IobGV0IHI9MDtyPHJvdytyKysp" +
+"YnJpY2tzW2NdW3JdPXtzdDpyPT0w" +
+"PzI6MSxtU3Q6cj09MD8yOjEsYzpg" +
+"aHNsKCR7cio0MCsyNjB9LDEwMCUs" +
+"NTAlKWB9fX1sZXQgYm9zcz17eDo1" +
+"MCx5OjM1LHc6MjAwLGg6MjIsaHA6" +
+"NjAsbXhIOjYwLGRpcjoxLGJUOjAs" +
+"cGg6MX07aW5pdCgpO2Z1bmN0aW9u" +
+"IHNuZChmLHQsZCxlPTAsdj0wLjAz" +
+"KXtpZighYUN0eClyZXR1cm47dHJ5" +
+"e2xldCBvPWFDdHguY3JlYXRlT3Nj" +
+"aWxsYXRvcigpLGc9YUN0eC5jcmVh" +
+"dGVHYWluKCk7by50eXBlPXQ7by5m" +
+"cmVxdWVuY3kuc2V0VmFsdWVBdFRp" +
+"bWUoZixhQ3R4LmN1cnJlbnRUaW1l" +
+"KTtpZihlPjApby5mcmVxdWVuY3ku" +
+"ZXhwb25lbnRpYWxSYW1wVG9WYWx1" +
+"ZUF0VGltZShlLGFDdHguY3VycmVu" +
+"dFRpbWUrZCk7Zy5nYWluLnNldFZh" +
+"bHVlQXRUaW1lKHYsYUN0eC5jdXJy" +
+"ZW50VGltZSk7Zy5nYWluLmV4cG9u" +
+"ZW50aWFsUmFtcFRvVmFsdWVBdFRp" +
+"bWUoMC4wMDEsYUN0eC5jdXJyZW50" +
+"VGltZStkKTtvLmNvbm5lY3QoZyk7" +
+"Zy5jb25uZWN0KGFDdHguZGVzdGlu" +
+"YXRpb24pO28uc3RhcnQoKTtvLnN0" +
+"b3AoYUN0eC5jdXJyZW50VGltZStk" +
+"KTt9Y2F0Y2goZSl7fX1mdW5jdGlv" +
+"biBtdih4KXtsZXQgcl9fbj1jdi5n" +
+"ZXRCb3VuZGluZ0NsaWVudFJlY3Qo" +
+"KSxtWD14LXJfX24ubGVmdDtpZiht" +
+"WD4wJiZtWDxjdi53aWR0aCl7cFg9" +
+"bVgtcHdkLzI7aWYoTWF0aC5hYnMo" +
+"cFgtb2xkWD4zNSYmc3c8PTAmJnN3" +
+"Pi0xMDB7c3c9NjA7c25kKDUwMCwi" +
+"c2luZSIsMC40LDgwLDAuMDUpO31v" +
+"bGRYPXBYO319ZnVuY3Rpb24gYXVk" +
+"KCl9X257aWYoIWFDdHgpe2FDdHg9" +
+"bmV3KHdpbmRvdy5BdWRpb0NvbnRl" +
+"eHR8fHdpbmRvdy53ZWJraXRBdWRp" +
+"b0NvbnRleHQpKCk7c2V0SW50ZXJ2" +
+"YWwoKCl9X249PntpZihnT3Zlcnx8" +
+"Z1dpbik1cmV0dXJuO2xldCBiPWJv" +
+"c3MucGg+PTI/MS40OjE7aWYoc3c+"
+"MCliKj0wLjU7aWYoc3c8LTMwKWsq" +
+"PTEuODtzbmQobWxkW3NlcVsqYiwi" +
+"c2F3dG9vdGgiLHN3PjA/MC4zOjAu" +
+"MTIsMCwwLjAxNSk7aWYoc2VxJTQ9" +
+"PTApc25kKHN3PC0zMD8xNDA6NzAs" +
+"InRyaWFuZ2xlIiwwLjEyLDIwLDAu" +
+"MTIpO2lmKHNlcSU0PT0yKXNuZCgy" +
+"MjAsInNxdWFyZSIsMC4wNCw0MCww" +
+"LjAzKTtzZXE9KHNlcSsxKSUxNjt9" +
+"LHN3PC0zMD85MDoxODApO319ZG9j" +
+"dW1lbnQuYWRkRXZlbnRMaXN0ZW5l" +
+"cigibW91c2Vtb3ZlIiwoZSk9Pntp" +
+"bml0QXVkaW8oKTtt शहरYmUoZS5j" +
+"bGllbnRYKTt9KTtjdi5hZGRFdmVu" +
+"dExpc3RlbmVyKCJ0b3VjaG1vdmUi" +
+"LChlKT0+e2luaXRBdWRpbygpO21v" +
+"dmUoZS50b3VjaGVzWzBdLmNsaWVu" +
+"dFgpO2UucHJldmVudERlZmF1bHQo" +
+"KTt9LHtwYXNzaXZlOmZhbHNlfSk7" +
+"ZnVuY3Rpb24gdHJpZygpe2lmKGh5" +
+"cEc+PTEwMCYmIWh5cEEpe2h5cEE9" +
+"dHJ1ZTsoeD0xMDA7c25kKDgwMCwi" +
+"c3F1YXJlIiwwLjUsMTAwLDAuMSk7" +
+"ZUJzLmZvckVhY2goZWI9PntjdWJl" +
+"cy5wdXNoKHt4OmViLngseTplYi55" +
+"fSk7Zm9yKGxldCBpPTA7aTw0O2kr" +
+"KylwdHMucHVzaCh7eDplYi54LHk6" +
+"ZWIueSx2eDooTWF0aC5yYW5kb20o" +
+"KS0wLjUpKjYsdnk6KE1hdGgucmFu" +
+"ZG9tKCktMC41Kio2LGE6MSxjOiIj" +
+"ZjBmIn0pO30pO2VCcz1bXTtzZXRU" +
+"aW1lb3V0KCgpe2h5cEE9ZmFsc2U7" +
+"aHlwRz0wO30sMjUwMCk7fX1mdW5j" +
+"dGlvbiB1cGRhdGUoKXtpZihnT3Zl" +
+"cnx8Z1dpbik1cmV0dXJuO2xldCB0" +
+"cz0oc3c+MD8wLjM1OjEpKihzdzwt" +
+"MzA/MS42OjEpKihoeXBBPzAuMjox" +
+"KTtpZihzdz4wKXtzdy0tO31lbHNl" +
+"IGlmKHN3PC0zMCl7c3crKztpZihz" +
+"dz49MClzdz0wO31pZighaHlwQSYm" +
+"aHlwRzwxMDAkaHlwRys9MC4wNTti" +
+"b3NzLmJUKyt0cztpZihib3NzLnBo" +
+"Pj0yKXtscUF5Kz0wLjAzKnRzO3dh" +
+"cnBUKyt0cztpZih3YXJwVD4xMjAp" +
+"e2Jvc3MueD1NYXRoLnJhbmRvbSgp" +
+"Kihjdi53aWR0aC1ib3NzLncpO3dh" +
+"cnBUPTA7c25kKDYwMCwic2luZSIs" +
+"MC4wOCwxNTAsMC4wMyk7fX1lbHNl" +
+"e2Jvc3MueCs9Ym9zcy5kaXIqMS41" +
+"KnRzO2lmKGJvc3MueDwxMHx8Ym9z" +
+"cy54K2Jvc3Mudy5jdi53aWR0aC0x" +
+"MClib3NzLmRpclg9LTF9YlgrPWJE" +
+"eCp0cztiWSs9YkR5KnRzO3RyLnB1" +
+"c2goe3g6YlgseTpiWX0pO2lmKHRy" +
+"Lmxlbmd0aD42KXRyLnNoaWZ0KCk7" +
+"aWYoYm9zcy5waD09Myl7bGV0IGR4" +
+"PWJoWC1iWCxkeT1iaFktYlk纪录ZGlt" +
+"PU1hdGguc3FydChkeCpkK2R5KmR5" +
+"KTtpZihkaW08MTIwKXtiWCs9KGR4" +
+"L2RpbSkqMC4yNSp0cztiWSs9KGR5" +
+"L2RpbSkqMC4yNSp0czt9fWxldCBp" +
+"dj1ib3NzLnBoPT0yPzQ1Oihib3Nz" +
+"LnBoPT0zPzMwOjc1KTtpZihib3Nz" +
+"LmJUPml2KXtlQcandidateXMucHVz" +
+"aCh7eDpib3NzLngrMzAseTpib3Nz" +
+"Lnkray5oLHZ5OjIuNCx2eDpib3Nz" +
+"LnBoPj0yPyhNYXRoLnJhbmRvbSgp" +
+"LTAuNSkqMgowLHNwOmJvc3MucGg9" +
+"PTN9LHt4OmJvc3MueCtib3NzLncK" +
+"LTMwLHk6Ym9zcy55K2Jvc3MuaCx2" +
+"eToyLjQsdng6Ym9zcy5waD49Mj8o" +
+"TWF0aC5yYW5kb20oKS0wLjUpKjI6" +
+"MCxzcDpib3NzLnBoPT0zfSk7Ym9z" +
+"cy5iVD0wO3NuZCgxNjAsInRyaWFu" +
+"Z2xlIiwwLjA0KTt9Zm9yKGxldCBp" +
+"PWN1YmVzLmxlbmd0aC0xO2k+PTA7" +
+"aS0tKXtsZXQgY2I9Y3ViZXNbaV0s" +
+"ZHg9cFgrcHdkLzItY2IueCxkeT1j" +
+"di5oZWlnaHQtNC1jYi55LGRpbT1N" +
+"YXRoLnNxdXJ0KGR4KmR4K2R5KmR5" +
+"KTtjYi54Kz0oZHgvZGltKTo0LjU7" +
+"Y2IueSs9KGR5L2RpbSkqNC41O2lm" +
+"KGRpbTwyMCl7Y3ViZXMuc3BsaWNl" +
+"KGksMSk7c2NvcmUrPTUwO2RvY3Vt" +
+"ZW50LmdldEVsZW1lbnRCeUlkKCJz" +
+"YyIpLmlubmVyVEVYVD0iU0NPUkU6" +
+"ICIrc2NvcmU7c25kKDgwMCwic2lu" +
+"ZSIsMC4wMywxMjAwLDAuMDIpO319" +
+"Zm9yKGxldCBpPWVCcy5xlW5ndGgt" +
+"MTtpPj0wO2ktLSl7bGV0IGViPWVC" +
+"c1tpXTtlYi55Kz1lYi52eSp0cztl" +
+"Yi54Kz0oZWIudnh8fDApKnRzO2lm" +
+"KGJvc3MucGg9PTMpe2xldCBkeD1i" +
+"aFgtZWIueCxkeT1iaFktZWIueSxk" +
+"aW09TWF0aC5zcXJ0KGR4KmR4K2R5" +
+"KmR5KTtpZihkaW08MTAwKXtlYi54" +
+"Kz0oZHgvZGltKSw0KnRzO2ViLnkr" +
+"PShkeS9kaW0pKDAuNCp0czt9fWlm" +
+"KGViLnNwJiZlYi55PjE1MCYmIWVi" +
+"LmRTLXtlYi5kUz10cnVlO2VCcy5w" +
+"dXNoKHt4OmViLngseTplYi55LHZ5" +
+"OmViLnZ5LHZ4Oi0xLjJ9LHt4OmVi" +
+"LngseTplYi55LHZ5OmViLnZ5LHZ4" +
+"OjEuMn0pO31pZihlYi55PmN2Lmhl" +
+"aWdodHx8ZWIueDwwfHxlYi54PmN2" +
+"LndpZHRoKXtlQcandidateXMuc3Bs" +
+"aWNlKGksMSk7Y29udGludWU7fWlm" +
+"KHNoZGVsZWIueT49Y3YuaGVpZ2h0" +
+"LTE0JiZlYi54PnBYJiZlYi54PHBY" +
+"K3B3ZCl7ZUJzLnNwbGljZShpLDEp" +
+"O3NoZEhwLS07Y3ViZXMucHVzaCh7" +
+"eDplYi54LHk6ZWIueX0pO3NuZCgy" +
+"NTAsInNpbmUiLDAuMDUpO2lmKHNo" +
+"ZEhwPD0wKXNoZD1mYWxzZTtjb250" +
+"aW51ZTt9aWYoZWIueT49Y3YuaGVp" +
+"Z2h0LTEwJiZlYi54PnBYJiZlYi54" +
+"PHBYK3B3ZCYmIWh5cEEpe2VCcy5z" +
+"cGxpY2UoaSwxKTtsaXZlcy0tO3Nu" +
+"ZCgxMzAsInNhd3Rvb3RoIiwwLjIs" +
+"MTAsMC4xKTtpZihsaXZlcz09MCln" +
+"T3Zlcj10cnVlO2NvbnRpbnVlO319" +
+"aWYoYm9zcy5ocD4wJiZib3NzLnBo" +
+"Pj0yJiZ3YXJwVCU2PT0wKXtsZXQg" +
+"Yng9Ym9zcy54K2Jvc3Mudy8yLGJ5" +
+"PWJvc3MueStib3NzLmgvMixhbG9u" +
+"Zz1bbHNBbmcsbHNBbmcrTWF0aC5Q" +
+"SS8zLjUsbHNBbmctTWF0aC5QSS8z" +
+"LjVdLGxDPWJvc3MucGg9PTM/Mzox" +
+"O2ZvcihsZXQgYT0wO2E8bEM7YSsr" +
+"KXtsZXQgbHg9YngrTWF0aC5jb3Mo" +
+"YWxvbmdbYV0pKjI2MCxseT1ieStN" +
+"YXRoLnNpbihhbG9uZ1thXSkqMjYw" +
+"O2lmKGx5Pj1jdi5oZWlnaHQtMTAm" +
+"Jmx4PnBYJiZseDxwWCtwd2QmJiFz" +
+"aGQmJiFoeXBBKXtsaXZlcy0tO3Nu" +
+"ZCgxMzAsInNhd3Rvb3RoIiwwLjIs" +
+"MTAsMC4xKTtpZihsaXZlcz09MCln" +
+"T3Zlcj10cnVlO319fWlmKGhtJiZN" +
+"YXRoLnJhbmRvbSgpPDAuMTIqdHMp" +
+"e21zLnB1c2goe3g6cFgrcHdkLzIs" +
+"eTpjdi5oZWlnaHQtMTB9KTtzbmQo" +
+"NTAwLCJ0cmlhbmdsZSIsMC4wNCw3" +
+"NTAsMC4wMyk7fWZvcihsZXQgaT1t" +
+"cy5sZW5ndGgtMTtpPj0wO2ktLSl7" +
+"bGV0IG09bXNbaV0sdHg9Ym9zcy54" +
+"K2Jvc3Mudy8yLHR5PWJvc3MueSti" +
+"b3NzLmgvMixhbmc9TWF0aC5hdGFu" +
+"Mih0eS1tLnksdHgtbS54KTttLngr" +
+"PU1hdGguY29zKGFuZykqNS41KnRz" +
+"O20ueSs9TWF0aC5zaW4oYW5nKSo1" +
+"LjUqdHM7aWYobS54PmJvc3MueCYm" +
+"bS54PGJvc3MueCtib3NzLndbJiZt" +
+"Lnk+Ym9zcy55JiZtLnk8Ym9zcy55" +
+"K2Jvc3MuaCl7Zm9yKGxldCBwPTA7" +
+"cDw0O3ArKylwdHMucHVzaCh7eDpt" +
+"LngseTptLnkseDooTWF0aC5yYW5k" +
+"b20oKS0wLjUpKjMsdnk6KE1hdGgu" +
+"cmFuZG9tKCktMC41KiozLGE6MSxj" +
+"OiIjZjBmIn0pO2Jvc3MuaHAtLTtz" +
+"bmQoOTAsInNhd3Rvb3RoIiwwLjA2" +
+"KTttcy5zcGxpY2UoaSwxKTtjaFBo" +
+"KCk7fX1pZihiWD5jdi53aWR0aC1i" +
+"UnxiWDxiUil7YkR4PS1iRHg7c25k" +
+"KDM1MCwic2luZSIsMC4wMyk7fWlm" +
+"KGJZPGJSKXxiRHk9LWJEeTtzbmQo" +
+"MzUwLCJzaW5lIiwwLjAzKTt9ZWxz" +
+"ZSBpZihiWT5jdi5oZWlnaHQtYlIt" +
+"OCl7aWYoYlX+YVgmJmJYPBYrcHdk" +
+"KXtiRHg9KGJYLShwWCtwd2QvMikp" +
+"LzY7YkR5PS1NYXRoLnNxcnQoMjUt" +
+"YkR4KmJEeCk7c25kKDQyMCwic2lu" +
+"ZSIsMC4wNSw1MDApO31lbHNlIGlm" +
+"KGJZPmd2LmhlaWdodC1iUil7YmFs" +
+"bHMuc3BsaWNlKDAsMSk7aWYobGl2" +
+"ZXM+MSl7bGl2ZXMtLTtiWD0xNTAs" +
+"Ylk9MjYwLGJEeD0zLGJEeT0tNDt9" +
+"ZWxzZXtsaXZlcz0wO2dPdmVyPXRy" +
+"dWU7c25kKDE1MCwic2F3dG9vdGgi" +
+"LDAuNCwyMCk7fX19aWYoYm9zcy5o" +
+"cD4wJiZiWD5ib3NzLngmJmJYPGJv" +
+"c3MueCtib3NzLndbJiZiWT5ib3Nz" +
+"LnkmJmJZPGJvc3MueStib3NzLmgp" +
+"eWJEeT0tYkR5O2Jvc3MuaHAtPTIs" +
+"c25kKDkwLCJzYXd0b290aCIsMC4w" +
+"Nik7Y2hQaCgpO31mb3IobGV0IGM9" +
+"MDtjPGNvbDtjKyspe2ZvcihsZXQg" +
+"cj0wO3I8cm93O3IrKyl7bGV0IGJr" +
+"PWJyaWNrc1tjXVtyXSx4PWMqKGJX" +
+"K2JQZCkrb0xlZnQseT1yKihiSCti" +
+"UGQpK29Ub3A7aWYoYmsuc3Q+MCYm" +
+"YlY+eCYmYlY8eCtiVyYmYlk+eSYm" +
+"Ylk8eShiSCl7YkR5PS1iRHk7Ymsu" +
+"c3QtLTtpZihiay5zdD09Myl7c2Nv" +
+"cmUrPTIwO2RvY3VtZW50LmdldEVs" +
+"ZW1lbnRCeUlkKCJzYyIpLmlubmVy" +
+"VEVYVD0iU0NPUkU6ICIrc2NvcmU7" +
+"c25kKDMwMCwic3F1YXJlIiwwLjA2" +
+"LDcwMCwwLjA0KTtpZihNYXRoLnJh" +
+"bmRvbSgpPDAuNDUpe2xldCByPU1h" +
+"dGgucmFuZG9tKCksdD1yPDAuMzM/" +
+"J00nOihyPDAuNjY/J0gnOidTJyk7" +
+"aXRzLnB1c2goe3g6YlgseTpiWSx0" +
+"OnR9KTt9Zm9yKGxldCBpPTA7aTw2" +
+"O2krKylwdHMucHVzaCh7eDpiWCx5" +
+"OmJZLHZ4OihNYXRoLnJhbmRvbSgp" +
+"LTAuNSkqNCx2eTooTWF0aC5yYW5k" +
+"b20oKS0wLjUpKjQtMSxhOjEsYzpi" +
