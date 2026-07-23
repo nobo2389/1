@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>ブロック崩し</title>
@@ -12,22 +14,33 @@ body{
 margin:0;
 background:#111;
 color:white;
-font-family:sans-serif;
 text-align:center;
+font-family:sans-serif;
 }
 
 canvas{
+
 background:#000;
-border:2px solid white;
+
+border:3px solid white;
+
 touch-action:none;
+
 }
 
+
 button{
-padding:12px 25px;
+
 font-size:18px;
-margin:10px;
+
+padding:10px 25px;
+
+margin:5px;
+
 border-radius:10px;
+
 }
+
 
 </style>
 
@@ -36,12 +49,21 @@ border-radius:10px;
 
 <body>
 
+
 <h1>🎮 ブロック崩し</h1>
+
 
 <p>
 スコア：
 <span id="score">0</span>
 </p>
+
+
+<p>
+ステージ：
+<span id="stage">1</span>
+</p>
+
 
 <p>
 残機：
@@ -49,12 +71,14 @@ border-radius:10px;
 </p>
 
 
-<canvas id="canvas" width="360" height="600"></canvas>
+<canvas id="game" width="360" height="600"></canvas>
+
 
 <br>
 
+
 <button onclick="startGame()">
-スタート
+開始
 </button>
 
 
@@ -68,7 +92,7 @@ border-radius:10px;
 
 
 const canvas=
-document.getElementById("canvas");
+document.getElementById("game");
 
 
 const ctx=
@@ -83,9 +107,9 @@ let score=0;
 
 let life=3;
 
+let stage=1;
 
 
-// ボール
 
 let ball={
 
@@ -93,7 +117,7 @@ x:180,
 
 y:400,
 
-size:8,
+r:8,
 
 dx:4,
 
@@ -103,52 +127,56 @@ dy:-4
 
 
 
-
-// パドル
-
 let paddle={
 
 x:140,
 
 y:560,
 
-width:80,
+w:80,
 
-height:12
+h:12
 
 };
 
 
 
 
-
-// ブロック
-
 let blocks=[];
 
 
 
-function createBlocks(){
+function makeBlocks(){
 
 
 blocks=[];
 
 
-for(let row=0;row<5;row++){
+for(
+let y=0;
+y<5+stage;
+y++
+){
 
 
-for(let col=0;col<8;col++){
+for(
+let x=0;
+x<8;
+x++
+){
 
 
 blocks.push({
 
-x:10+col*43,
+x:10+x*43,
 
-y:40+row*25,
+y:40+y*25,
 
 w:38,
 
 h:18,
+
+hp:stage,
 
 alive:true
 
@@ -156,6 +184,7 @@ alive:true
 
 
 }
+
 
 }
 
@@ -170,48 +199,47 @@ alive:true
 function draw(){
 
 
-
 ctx.clearRect(
 0,
 0,
-canvas.width,
-canvas.height
+360,
+600
 );
 
 
 
-// ボール
-
 ctx.fillStyle="white";
 
+
 ctx.beginPath();
+
 
 ctx.arc(
 ball.x,
 ball.y,
-ball.size,
+ball.r,
 0,
 Math.PI*2
 );
+
 
 ctx.fill();
 
 
 
-// パドル
 
 ctx.fillStyle="cyan";
+
 
 ctx.fillRect(
 paddle.x,
 paddle.y,
-paddle.width,
-paddle.height
+paddle.w,
+paddle.h
 );
 
 
 
-// ブロック
 
 for(let b of blocks){
 
@@ -242,7 +270,6 @@ b.h
 
 
 
-
 function update(){
 
 
@@ -258,16 +285,15 @@ ball.y+=ball.dy;
 
 
 
-// 壁
-
 if(
-ball.x<0 ||
-ball.x>canvas.width
+ball.x<0||
+ball.x>360
 ){
 
 ball.dx*=-1;
 
 }
+
 
 
 if(ball.y<0){
@@ -280,15 +306,13 @@ ball.dy*=-1;
 
 
 
-// パドル
-
 if(
 
-ball.y+ball.size>=paddle.y &&
+ball.y+ball.r>=paddle.y&&
 
-ball.x>=paddle.x &&
+ball.x>=paddle.x&&
 
-ball.x<=paddle.x+paddle.width
+ball.x<=paddle.x+paddle.w
 
 ){
 
@@ -300,22 +324,16 @@ ball.dy=-Math.abs(ball.dy);
 
 
 
-// 落下
-
-if(ball.y>canvas.height){
+if(ball.y>600){
 
 
 life--;
 
 
-document.getElementById(
-"life"
-).innerText=life;
-
+document.getElementById("life").innerText=life;
 
 
 resetBall();
-
 
 
 if(life<=0){
@@ -335,15 +353,14 @@ alert("ゲームオーバー");
 
 
 
+hit();
 
 
-checkBlock();
 
 draw();
 
 
 requestAnimationFrame(update);
-
 
 
 }
@@ -352,7 +369,7 @@ requestAnimationFrame(update);
 
 
 
-function checkBlock(){
+function hit(){
 
 
 for(let b of blocks){
@@ -366,31 +383,34 @@ continue;
 
 if(
 
-ball.x>b.x &&
-ball.x<b.x+b.w &&
+ball.x>b.x&&
 
-ball.y>b.y &&
+ball.x<b.x+b.w&&
+
+ball.y>b.y&&
+
 ball.y<b.y+b.h
 
 ){
 
 
-b.alive=false;
+b.hp--;
 
 
 ball.dy*=-1;
 
 
+
+if(b.hp<=0){
+
+
+b.alive=false;
+
+
 score+=10;
 
 
-document.getElementById(
-"score"
-).innerText=score;
-
-
-
-}
+document.getElementById("score").innerText=score;
 
 
 }
@@ -399,6 +419,60 @@ document.getElementById(
 
 }
 
+
+}
+
+
+
+clearCheck();
+
+
+}
+
+
+
+
+
+function clearCheck(){
+
+
+let remain=false;
+
+
+
+for(let b of blocks){
+
+
+if(b.alive){
+
+remain=true;
+
+}
+
+}
+
+
+
+if(!remain){
+
+
+stage++;
+
+
+document.getElementById("stage").innerText=stage;
+
+
+makeBlocks();
+
+
+resetBall();
+
+
+}
+
+
+
+}
 
 
 
@@ -422,22 +496,22 @@ ball.dy=-4;
 
 
 
-
-
 function startGame(){
 
 
 if(!running){
 
+
 running=true;
+
 
 update();
 
-}
-
 
 }
 
+
+}
 
 
 
@@ -448,33 +522,42 @@ score=0;
 
 life=3;
 
-
-document.getElementById(
-"score"
-).innerText=0;
+stage=1;
 
 
-document.getElementById(
-"life"
-).innerText=3;
+document.getElementById("score").innerText=0;
 
+document.getElementById("life").innerText=3;
+
+document.getElementById("stage").innerText=1;
+
+
+makeBlocks();
 
 resetBall();
-
-
-createBlocks();
-
 
 draw();
 
 
-}
+}// ============================
+// Part2
+// 操作・アイテム・追加機能
+// ============================
 
 
 
+let items=[];
 
 
+let highScore=
+Number(localStorage.getItem("highScore"))||0;
+
+
+
+// ----------------------------
 // マウス操作
+// ----------------------------
+
 
 canvas.addEventListener(
 "mousemove",
@@ -485,10 +568,21 @@ let rect=
 canvas.getBoundingClientRect();
 
 
+
 paddle.x=
 e.clientX-
 rect.left-
-paddle.width/2;
+paddle.w/2;
+
+
+
+if(paddle.x<0)
+paddle.x=0;
+
+
+
+if(paddle.x+paddle.w>360)
+paddle.x=360-paddle.w;
 
 
 
@@ -499,7 +593,11 @@ paddle.width/2;
 
 
 
+// ----------------------------
 // スマホ操作
+// ----------------------------
+
+
 
 canvas.addEventListener(
 "touchmove",
@@ -510,14 +608,26 @@ let rect=
 canvas.getBoundingClientRect();
 
 
+
 paddle.x=
 e.touches[0].clientX-
 rect.left-
-paddle.width/2;
+paddle.w/2;
+
+
+
+if(paddle.x<0)
+paddle.x=0;
+
+
+
+if(paddle.x+paddle.w>360)
+paddle.x=360-paddle.w;
 
 
 
 e.preventDefault();
+
 
 
 },
@@ -530,13 +640,943 @@ passive:false
 
 
 
-createBlocks();
+// ----------------------------
+// アイテム生成
+// ----------------------------
+
+
+
+function createItem(x,y){
+
+
+if(Math.random()<0.25){
+
+
+
+items.push({
+
+x:x,
+
+y:y,
+
+type:
+Math.random()<0.5?
+"wide":
+"power"
+
+
+});
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+// ----------------------------
+// アイテム更新
+// ----------------------------
+
+
+
+function updateItems(){
+
+
+
+for(
+let i=items.length-1;
+i>=0;
+i--
+){
+
+
+let item=items[i];
+
+
+item.y+=3;
+
+
+
+
+if(
+
+item.y>paddle.y&&
+
+item.x>paddle.x&&
+
+item.x<paddle.x+paddle.w
+
+){
+
+
+
+if(item.type==="wide"){
+
+
+
+paddle.w+=30;
+
+
+
+setTimeout(function(){
+
+paddle.w-=30;
+
+},5000);
+
+
+
+}
+
+
+
+if(item.type==="power"){
+
+
+ball.dx*=1.2;
+
+ball.dy*=1.2;
+
+
+
+}
+
+
+
+items.splice(i,1);
+
+
+
+}
+
+
+
+
+if(item.y>600){
+
+
+items.splice(i,1);
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+// ----------------------------
+// アイテム描画
+// ----------------------------
+
+
+
+function drawItems(){
+
+
+
+for(let item of items){
+
+
+
+ctx.fillStyle=
+item.type==="wide"?
+"yellow":
+"lime";
+
+
+
+ctx.fillRect(
+
+item.x,
+
+item.y,
+
+12,
+
+12
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+// ----------------------------
+// 描画拡張
+// ----------------------------
+
+
+
+let oldDraw=draw;
+
+
+
+draw=function(){
+
+
+oldDraw();
+
+
+drawItems();
+
+
+};
+
+
+
+
+
+
+
+// ----------------------------
+// ブロック破壊時アイテム追加
+// ----------------------------
+
+
+
+let oldHit=hit;
+
+
+
+hit=function(){
+
+
+
+for(let b of blocks){
+
+
+
+if(!b.alive)
+continue;
+
+
+
+if(
+
+ball.x>b.x&&
+
+ball.x<b.x+b.w&&
+
+ball.y>b.y&&
+
+ball.y<b.y+b.h
+
+){
+
+
+b.hp--;
+
+
+ball.dy*=-1;
+
+
+
+if(b.hp<=0){
+
+
+
+b.alive=false;
+
+
+
+score+=10;
+
+
+createItem(
+b.x,
+b.y
+);
+
+
+
+document.getElementById(
+"score"
+).innerText=score;
+
+
+
+}
+
+
+
+
+}
+
+
+
+}
+
+
+
+
+clearCheck();
+
+
+
+};
+
+
+
+
+
+
+
+// ----------------------------
+// 更新処理拡張
+// ----------------------------
+
+
+
+let oldUpdate=update;
+
+
+
+update=function(){
+
+
+
+updateItems();
+
+
+oldUpdate();
+
+
+
+};
+
+
+
+
+
+
+
+// ----------------------------
+// ハイスコア保存
+// ----------------------------
+
+
+
+function saveScore(){
+
+
+
+if(score>highScore){
+
+
+highScore=score;
+
+
+localStorage.setItem(
+"highScore",
+highScore
+);
+
+
+}
+
+
+
+}
+
+
+
+
+
+setInterval(
+saveScore,
+5000
+);// ============================
+// Part3
+// UI追加・クリア処理・セーブ
+// ============================
+
+
+
+let gameClear=false;
+
+
+let totalClear=0;
+
+
+
+// ----------------------------
+// ハイスコア表示
+// ----------------------------
+
+
+
+let highText=
+document.createElement("p");
+
+
+highText.innerHTML=
+"ハイスコア：<span id='high'>0</span>";
+
+
+document.body.insertBefore(
+highText,
+canvas
+);
+
+
+
+document.getElementById("high")
+.innerText=highScore;
+
+
+
+
+
+
+// ----------------------------
+// クリア判定強化
+// ----------------------------
+
+
+
+let oldClearCheck=clearCheck;
+
+
+
+clearCheck=function(){
+
+
+let remain=false;
+
+
+
+for(let b of blocks){
+
+
+if(b.alive){
+
+remain=true;
+
+break;
+
+}
+
+
+}
+
+
+
+if(!remain){
+
+
+
+totalClear++;
+
+
+
+if(stage>=10){
+
+
+
+gameClear=true;
+
+
+running=false;
+
+
+
+alert(
+"🎉 完全クリア！\n"+
+"スコア："+score
+);
+
+
+
+return;
+
+
+
+}
+
+
+
+stage++;
+
+
+
+document.getElementById(
+"stage"
+).innerText=stage;
+
+
+
+makeBlocks();
+
+
+resetBall();
+
+
+
+alert(
+"ステージ "+
+stage+
+" 開始"
+);
+
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+// ----------------------------
+// セーブ
+// ----------------------------
+
+
+
+function saveGame(){
+
+
+
+let data={
+
+
+score:score,
+
+life:life,
+
+stage:stage,
+
+highScore:highScore
+
+
+};
+
+
+
+localStorage.setItem(
+
+"blockSave",
+
+JSON.stringify(data)
+
+);
+
+
+
+}
+
+
+
+
+
+// ----------------------------
+// ロード
+// ----------------------------
+
+
+
+function loadGame(){
+
+
+
+let data=
+localStorage.getItem(
+"blockSave"
+);
+
+
+
+if(data){
+
+
+
+let d=
+JSON.parse(data);
+
+
+
+score=d.score||0;
+
+life=d.life||3;
+
+stage=d.stage||1;
+
+highScore=d.highScore||0;
+
+
+
+document.getElementById(
+"score"
+).innerText=score;
+
+
+document.getElementById(
+"life"
+).innerText=life;
+
+
+document.getElementById(
+"stage"
+).innerText=stage;
+
+
+document.getElementById(
+"high"
+).innerText=highScore;
+
+
+
+makeBlocks();
+
 
 draw();
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+// ----------------------------
+// 自動保存
+// ----------------------------
+
+
+
+setInterval(function(){
+
+
+saveGame();
+
+
+},30000);
+
+
+
+
+
+
+
+// ----------------------------
+// ボール角度調整
+// ----------------------------
+
+
+
+canvas.addEventListener(
+"click",
+function(){
+
+
+if(running){
+
+
+ball.dx+=
+(Math.random()-0.5);
+
+
+
+}
+
+
+
+});
+
+
+
+
+
+
+
+loadGame();// ============================
+// Part4
+// 最終仕上げ
+// ============================
+
+
+
+// ----------------------------
+// 効果音
+// ----------------------------
+
+
+function sound(freq){
+
+
+try{
+
+
+let audio=
+new AudioContext();
+
+
+let osc=
+audio.createOscillator();
+
+
+let gain=
+audio.createGain();
+
+
+
+osc.frequency.value=freq;
+
+
+osc.connect(gain);
+
+
+gain.connect(
+audio.destination
+);
+
+
+
+osc.start();
+
+
+gain.gain.exponentialRampToValueAtTime(
+
+0.0001,
+
+audio.currentTime+0.1
+
+);
+
+
+osc.stop(
+audio.currentTime+0.1
+);
+
+
+
+}catch(e){}
+
+
+
+}
+
+
+
+
+
+
+// ----------------------------
+// ブロック破壊音
+// ----------------------------
+
+
+
+let oldHit2=hit;
+
+
+
+hit=function(){
+
+
+let before=score;
+
+
+oldHit2();
+
+
+
+if(score>before){
+
+
+sound(500);
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+// ----------------------------
+// ゲーム状態表示
+// ----------------------------
+
+
+
+function showStatus(){
+
+
+console.log(
+
+"Score:",
+score,
+
+"Stage:",
+stage,
+
+"Life:",
+life
+
+);
+
+
+}
+
+
+
+
+
+
+
+setInterval(
+
+showStatus,
+
+5000
+
+);
+
+
+
+
+
+
+// ----------------------------
+// ゲームオーバー改善
+// ----------------------------
+
+
+
+let oldStart=startGame;
+
+
+
+startGame=function(){
+
+
+
+if(gameClear){
+
+
+resetGame();
+
+
+gameClear=false;
+
+
+}
+
+
+
+oldStart();
+
+
+
+};
+
+
+
+
+
+
+// ----------------------------
+// リセット強化
+// ----------------------------
+
+
+
+let oldReset=resetGame;
+
+
+
+resetGame=function(){
+
+
+
+oldReset();
+
+
+
+items=[];
+
+
+paddle.w=80;
+
+
+ball.dx=4;
+
+ball.dy=-4;
+
+
+gameClear=false;
+
+
+saveGame();
+
+
+
+};
+
+
+
+
+
+
+// ----------------------------
+// 初期化
+// ----------------------------
+
+
+
+makeBlocks();
+
+
+draw();
+
+
 
 
 </script>
 
 
 </body>
+
 </html>
