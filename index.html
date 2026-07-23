@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" 
   content="width=device-width">
-<title>SOUND BOSS</title>
+<title>ULTRA</title>
 <style>
   * { margin:0; padding:0; }
   body {
-    background: #030307;
+    background: #020204;
     color: #fff;
     display: flex;
     flex-direction: column;
@@ -19,16 +19,15 @@
     overflow: hidden;
   }
   #ui {
-    width: 320px;
+    width: 280px;
     display: flex;
     justify-content: space-between;
-    margin-bottom: 6px;
-    font-size: 12px;
+    margin-bottom: 4px;
+    font-size: 11px;
   }
   canvas {
-    background: #010103;
-    border: 2px solid #00ffff;
-    box-shadow: 0 0 20px #00ffff33;
+    background: #000;
+    border: 2px solid #0ff;
   }
 </style>
 </head>
@@ -36,10 +35,10 @@
 
 <div id="ui">
   <div id="sc">SCORE: 0</div>
-  <div id="bhp">BOSS HP: 100%</div>
+  <div id="bhp">BOSS: 100%</div>
 </div>
 <canvas id="cv" 
-  width="320" height="400"></canvas>
+  width="280" height="360"></canvas>
 
 <script>
 const cv = document.getElementById("cv");
@@ -49,47 +48,67 @@ let score = 0, lives = 3;
 let gOver = false, gWin = false;
 let skT = 0, skX = 0, skY = 0;
 
-// サウンド生成システム (Web Audio API)
-let audioCtx = null;
+// サウンド・BGMシステム
+let aCtx = null, bgmIvl = null;
+let seq = 0;
+// BGMのメロディ（音階の周波数）
+const melody = [
+  261, 293, 329, 349,
+  392, 349, 329, 293,
+  329, 349, 392, 440,
+  493, 440, 392, 349
+];
+
 function initAudio() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || 
+  if (!aCtx) {
+    aCtx = new (window.AudioContext || 
       window.webkitAudioContext)();
+    startBGM();
   }
 }
 
-// 効果音を発音する関数
-function playSound(freq, type, duration, endFreq = 0) {
-  if (!audioCtx) return;
+function playSound(f, t, d, e = 0) {
+  if (!aCtx) return;
   try {
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    if (endFreq > 0) {
-      osc.frequency.exponentialRampToValueAtTime(
-        endFreq, audioCtx.currentTime + duration
+    let o = aCtx.createOscillator();
+    let g = aCtx.createGain();
+    o.type = t;
+    o.frequency.setValueAtTime(f, aCtx.currentTime);
+    if (e > 0) {
+      o.frequency.exponentialRampToValueAtTime(
+        e, aCtx.currentTime + d
       );
     }
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(
-      0.01, audioCtx.currentTime + duration
+    g.gain.setValueAtTime(0.05, aCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(
+      0.001, aCtx.currentTime + d
     );
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-  } catch(e) {}
+    o.connect(g); g.connect(aCtx.destination);
+    o.start(); o.stop(aCtx.currentTime + d);
+  } catch(err) {}
 }
 
-// パドル / ミサイル / 敵の弾
-let pwd = 60, pX = 130, pH = 8;
+function startBGM() {
+  if (bgmIvl) return;
+  bgmIvl = setInterval(() => {
+    if (gOver || gWin) return;
+    // ベース音とメロディを同時生成
+    playSound(melody[seq], "triangle", 0.2);
+    if (seq % 4 === 0) {
+      playSound(110, "sawtooth", 0.15);
+    }
+    seq = (seq + 1) % melody.length;
+  }, 250); // テンポよく演奏
+}
+
+// パドル / ミサイル / 敵弾
+let pwd = 50, pX = 115, pH = 8;
 let hmActive = false, ms = [], eBs = [];
 
 // ボス設定
 let boss = {
-  x: 60, y: 50, w: 200, h: 30,
-  hp: 50, maxHp: 50, clr: "#ff0055",
+  x: 40, y: 40, w: 200, h: 24,
+  hp: 40, maxHp: 40, clr: "#f05",
   bTimer: 0
 };
 
@@ -97,10 +116,10 @@ let boss = {
 let balls = [];
 const bSpd = 5;
 
-// 通常ブロック
+// ブロック
 const row = 3, col = 5;
-const bW = 52, bH = 12, bPd = 5;
-const oTop = 100, oLeft = 20;
+const bW = 44, bH = 10, bPd = 4;
+const oTop = 80, oLeft = 22;
 let bricks = [];
 let pts = [], its = [];
 
@@ -110,13 +129,13 @@ function addBall(x, y, dx, dy) {
 
 function init() {
   balls = []; eBs = []; ms = []; its = [];
-  addBall(160, 340, 3, -4);
+  addBall(140, 300, 2, -4);
   boss.hp = boss.maxHp;
   for(let c=0; c<col; c++) {
     bricks[c] = [];
     for(let r=0; r<row; r++) {
       bricks[c][r] = {
-        x:0, y:0, st:1, c:"#00f2fe"
+        x:0, y:0, st:1, c: "#0ff"
       };
     }
   }
@@ -124,11 +143,11 @@ function init() {
 init();
 
 function addPt(x, y, clr) {
-  for(let i=0; i<6; i++) {
+  for(let i=0; i<5; i++) {
     pts.push({
       x:x, y:y,
-      vx:(Math.random()-0.5)*6,
-      vy:(Math.random()-0.5)*6,
+      vx:(Math.random()-0.5)*5,
+      vy:(Math.random()-0.5)*5,
       a:1, c:clr
     });
   }
@@ -137,7 +156,7 @@ function addPt(x, y, clr) {
 function drop(x, y) {
   if(Math.random() < 0.4) {
     let t = Math.random() > 0.5 ? 'M' : 'H';
-    its.push({x:x, y:y, t:t, r:7});
+    its.push({x:x, y:y, t:t, r:6});
   }
 }
 
@@ -147,31 +166,26 @@ function move(x) {
   if(mX > 0 && mX < cv.width) pX = mX - pwd/2;
 }
 
-// 初回操作時に音声を有効化
-function activateInput(clientX) {
-  initAudio();
-  move(clientX);
+function touch(clientX) {
+  initAudio(); move(clientX);
 }
 
-document.addEventListener("mousemove", (e)=>activateInput(e.clientX));
+document.addEventListener("mousemove", (e)=>touch(e.clientX));
 cv.addEventListener("touchmove", (e)=>{
-  activateInput(e.touches.clientX); e.preventDefault();
+  touch(e.touches.clientX); e.preventDefault();
 }, {passive:false});
 
 function hitBoss(dmg) {
-  boss.hp -= dmg;
-  skT = 10;
-  // ボス被弾音 (低い爆発音)
-  playSound(120, "sawtooth", 0.1, 40);
+  boss.hp -= dmg; skT = 8;
+  playSound(100, "sawtooth", 0.08, 30);
   if(boss.hp <= 0) {
     boss.hp = 0; gWin = true;
-    // クリアファンファール
-    setTimeout(()=>playSound(523, "square", 0.1), 0);
-    setTimeout(()=>playSound(659, "square", 0.1), 150);
-    setTimeout(()=>playSound(783, "square", 0.3), 300);
+    playSound(523, "square", 0.15);
+    setTimeout(()=>playSound(659, "square", 0.15), 100);
+    setTimeout(()=>playSound(783, "square", 0.4), 200);
   }
   let pct = Math.floor((boss.hp/boss.maxHp)*100);
-  document.getElementById("bhp").innerText = "BOSS HP: "+pct+"%";
+  document.getElementById("bhp").innerText = "BOSS: "+pct+"%";
 }
 
 function update() {
@@ -183,88 +197,82 @@ function update() {
     skT--;
   } else { skX = 0; skY = 0; }
 
-  // ボスの行動（反撃弾）
+  // ボスの弾
   boss.bTimer++;
-  if(boss.bTimer > 90) {
-    eBs.push({x: boss.x+50, y: boss.y+30, vy: 3});
-    eBs.push({x: boss.x+150, y: boss.y+30, vy: 3});
+  if(boss.bTimer > 80) {
+    eBs.push({x: boss.x+40, y: boss.y+24, vy: 2.5});
+    eBs.push({x: boss.x+160, y: boss.y+24, vy: 2.5});
     boss.bTimer = 0;
-    // ボス攻撃音
-    playSound(180, "triangle", 0.05);
+    playSound(160, "triangle", 0.04);
   }
 
-  // 敵の弾の移動
   for(let i=eBs.length-1; i>=0; i--) {
     let eb = eBs[i]; eb.y += eb.vy;
     if(eb.y > cv.height) { eBs.splice(i,1); continue; }
-    // パドルにヒット
     if(eb.y >= cv.height-pH && eb.x > pX && eb.x < pX+pwd) {
       eBs.splice(i,1); lives--;
-      playSound(150, "sawtooth", 0.3); // ダメージ音
+      playSound(140, "sawtooth", 0.2);
       if(lives <= 0) {
-        gOver = true;
-        playSound(300, "sawtooth", 0.5, 50); // ゲームオーバー音
+        gOver = true; playSound(250, "sawtooth", 0.4, 40);
       }
       continue;
     }
   }
 
-  // ホーミングミサイル発射
+  // ミサイル
   if(hmActive && Math.random()<0.1) {
     ms.push({x: pX+pwd/2, y: cv.height-pH});
-    playSound(600, "triangle", 0.05, 900); // ミサイル発射音
+    playSound(500, "triangle", 0.04, 800);
   }
   for(let i=ms.length-1; i>=0; i--) {
     let m = ms[i];
     let tx = boss.x + boss.w/2, ty = boss.y + boss.h/2;
-    let angle = Math.atan2(ty - m.y, tx - m.x);
-    m.x += Math.cos(angle) * 5; m.y += Math.sin(angle) * 5;
+    let ang = Math.atan2(ty - m.y, tx - m.x);
+    m.x += Math.cos(ang) * 5; m.y += Math.sin(ang) * 5;
 
-    // ボスとの衝突
-    if(m.x > boss.x && m.x < boss.x+boss.w && m.y > boss.y && m.y < boss.y+boss.h) {
-      addPt(m.x, m.y, "#ffff00"); hitBoss(1); ms.splice(i,1);
+    if(m.x > boss.x && m.x < boss.x+boss.w && 
+       m.y > boss.y && m.y < boss.y+boss.h) {
+      addPt(m.x, m.y, "#ff0"); hitBoss(1); ms.splice(i,1);
     }
   }
 
-  // ボール移動と判定
+  // ボール
   for(let i=balls.length-1; i>=0; i--) {
     let b = balls[i]; b.x += b.dx; b.y += b.dy;
 
     if(b.x+b.dx > cv.width-b.r || b.x+b.dx < b.r) {
-      b.dx = -b.dx; playSound(400, "sine", 0.05); // 壁反射音
+      b.dx = -b.dx; playSound(350, "sine", 0.04);
     }
     if(b.y+b.dy < b.r) {
-      b.dy = -b.dy; playSound(400, "sine", 0.05);
+      b.dy = -b.dy; playSound(350, "sine", 0.04);
     }
     else if(b.y+b.dy > cv.height-b.r-pH) {
       if(b.x > pX && b.x < pX+pwd) {
         let h = (b.x-(pX+pwd/2))/(pwd/2);
         b.dx = h * bSpd; b.dy = -Math.sqrt(bSpd*bSpd-b.dx*b.dx);
         if(Math.abs(b.dy)<2) b.dy = -2;
-        playSound(450, "sine", 0.08, 600); // パドル反射音
+        playSound(400, "sine", 0.06, 500);
       }
       else if(b.y+b.dy > cv.height-b.r) { 
-        balls.splice(i, 1); 
-        playSound(200, "sine", 0.1); // ボール落下音
-        continue; 
+        balls.splice(i, 1); playSound(180, "sine", 0.08); continue; 
       }
     }
 
-    // ボスとボールの衝突
-    if(boss.hp > 0 && b.x > boss.x && b.x < boss.x+boss.w && b.y > boss.y && b.y < boss.y+boss.h) {
+    if(boss.hp > 0 && b.x > boss.x && b.x < boss.x+boss.w && 
+       b.y > boss.y && b.y < boss.y+boss.h) {
       b.dy = -b.dy; addPt(b.x, b.y, boss.clr); hitBoss(2);
     }
 
-    // ブロックとボールの衝突
     for(let c=0; c<col; c++) {
       for(let r=0; r<row; r++) {
         let bk = bricks[c][r];
         if(bk.st === 1) {
-          if(b.x > bk.x && b.x < bk.x+bW && b.y > bk.y && b.y < bk.y+bH) {
+          if(b.x > bk.x && b.x < bk.x+bW && 
+             b.y > bk.y && b.y < bk.y+bH) {
             b.dy = -b.dy; bk.st = 0; score += 10;
             document.getElementById("sc").innerText = "SCORE: "+score;
             addPt(b.x, b.y, bk.c); drop(b.x+bW/2, b.y+bH);
-            playSound(300, "square", 0.08, 800); // ブロック破壊音
+            playSound(280, "square", 0.06, 700);
           }
         }
       }
@@ -272,28 +280,26 @@ function update() {
   }
 
   if(balls.length === 0) {
-    lives--; 
-    playSound(150, "sawtooth", 0.3);
+    lives--; playSound(140, "sawtooth", 0.2);
     if(lives <= 0) {
-      gOver = true;
-      playSound(300, "sawtooth", 0.5, 50);
-    } else {
-      addBall(160, 340, 3, -4);
-    }
+      gOver = true; playSound(250, "sawtooth", 0.4, 40);
+    } else { addBall(140, 300, 2, -4); }
   }
 
   // エフェクト＆アイテム
   for(let i=pts.length-1; i>=0; i--) {
-    let p = pts[i]; p.x += p.vx; p.y += p.vy; p.a -= 0.04;
+    let p = pts[i]; p.x += p.vx; p.y += p.vy; p.a -= 0.05;
     if(p.a <= 0) pts.splice(i, 1);
   }
   for(let i=its.length-1; i>=0; i--) {
     let it = its[i]; it.y += 2;
     if(it.y >= cv.height-pH && it.x > pX && it.x < pX+pwd) {
-      // アイテム取得音 (ピコピーン！)
-      playSound(500, "square", 0.05, 1000);
-      if(it.t === 'M') { addBall(it.x, 340, -2, -4); addBall(it.x, 340, 2, -4); } 
-      else { hmActive = true; setTimeout(()=>hmActive=false, 6000); }
+      playSound(450, "square", 0.04, 900);
+      if(it.t === 'M') { 
+        addBall(it.x, 300, -2, -4); addBall(it.x, 300, 2, -4); 
+      } else { 
+        hmActive = true; setTimeout(()=>hmActive=false, 5000); 
+      }
       its.splice(i, 1); continue;
     }
     if(it.y > cv.height) its.splice(i,1);
@@ -304,14 +310,13 @@ function draw() {
   ctx.clearRect(0, 0, cv.width, cv.height);
   ctx.save(); ctx.translate(skX, skY);
 
-  // ボス描画
   if(boss.hp > 0) {
-    ctx.fillStyle = boss.clr; ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 10px sans-serif";
-    ctx.fillText("MASTER CORE", boss.x+65, boss.y+18);
+    ctx.fillStyle = boss.clr; 
+    ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
+    ctx.fillStyle = "#fff"; ctx.font = "9px sans-serif";
+    ctx.fillText("BOSS CORE", boss.x+70, boss.y+15);
   }
 
-  // ブロック
   for(let c=0; c<col; c++) {
     for(let r=0; r<row; r++) {
       let b = bricks[c][r];
@@ -322,24 +327,33 @@ function draw() {
     }
   }
 
-  // 自機 / 敵弾 / ミサイル
-  ctx.fillStyle = "#00ffff"; ctx.fillRect(pX, cv.height-pH, pwd, pH);
-  ctx.fillStyle = "#ff5500"; eBs.forEach(eb => ctx.fillRect(eb.x, eb.y, 4, 8));
-  ctx.fillStyle = "#ffff00"; ms.forEach(m => ctx.fillRect(m.x, m.y, 3, 6));
+  ctx.fillStyle = "#0ff"; ctx.fillRect(pX, cv.height-pH, pwd, pH);
+  ctx.fillStyle = "#f50"; eBs.forEach(eb => ctx.fillRect(eb.x, eb.y, 4, 7));
+  ctx.fillStyle = "#ff0"; ms.forEach(m => ctx.fillRect(m.x, m.y, 3, 5));
 
-  // ボール / 演出 / アイテム
-  ctx.fillStyle = "#fff"; balls.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); });
-  pts.forEach(p => { ctx.save(); ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill(); ctx.restore(); });
-  its.forEach(it => { ctx.fillStyle = it.t === 'M' ? "#00ff66" : "#ffff00"; ctx.font = "bold 11px sans-serif"; ctx.fillText(it.t, it.x-4, it.y+4); });
+  ctx.fillStyle = "#fff"; balls.forEach(b => {
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+  });
+  pts.forEach(p => {
+    ctx.save(); ctx.globalAlpha = p.a; ctx.fillStyle = p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 1.5, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+  its.forEach(it => {
+    ctx.fillStyle = it.t === 'M' ? "#0f6" : "#ff0";
+    ctx.font = "bold 10px sans-serif"; ctx.fillText(it.t, it.x-3, it.y+3);
+  });
 
   ctx.restore();
 
   if(gOver || gWin) {
-    ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.font = "bold 24px monospace"; ctx.textAlign = "center";
-    ctx.fillStyle = gOver ? "#ff0055" : "#00ff66";
-    ctx.fillText(gOver ? "GAME OVER":"BOSS DESTROYED", cv.width/2, 180);
-    ctx.font = "12px monospace"; ctx.fillStyle = "#fff"; ctx.fillText("TAP TO RESTART", cv.width/2, 220);
+    ctx.fillStyle = "rgba(0,0,0,0.9)"; 
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.font = "bold 20px monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = gOver ? "#f05" : "#0f6";
+    ctx.fillText(gOver ? "GAME OVER":"BOSS DESTROYED", cv.width/2, 160);
+    ctx.font = "11px monospace"; ctx.fillStyle = "#fff";
+    ctx.fillText("CLICK TO RESTART", cv.width/2, 200);
   }
 }
 
@@ -348,7 +362,7 @@ cv.addEventListener("click", () => {
   if(gOver || gWin) {
     score = 0; lives = 3; gOver = false; gWin = false; hmActive = false;
     document.getElementById("sc").innerText = "SCORE: 0";
-    document.getElementById("bhp").innerText = "BOSS HP: 100%";
+    document.getElementById("bhp").innerText = "BOSS: 100%";
     init();
   }
 });
