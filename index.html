@@ -6,17 +6,26 @@
 
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>ブロック崩し</title>
+<title>Ultimate Block Breaker</title>
+
 
 <style>
 
 body{
+
 margin:0;
+
 background:#111;
+
 color:white;
-text-align:center;
+
 font-family:sans-serif;
+
+text-align:center;
+
 }
+
+
 
 canvas{
 
@@ -29,20 +38,30 @@ touch-action:none;
 }
 
 
+
 button{
 
-font-size:18px;
-
-padding:10px 25px;
+padding:10px 20px;
 
 margin:5px;
+
+font-size:18px;
 
 border-radius:10px;
 
 }
 
 
+
+.panel{
+
+margin:10px;
+
+}
+
+
 </style>
+
 
 </head>
 
@@ -50,28 +69,37 @@ border-radius:10px;
 <body>
 
 
-<h1>🎮 ブロック崩し</h1>
+<h1>🎮 Ultimate Block Breaker</h1>
 
 
-<p>
+
+<div class="panel">
+
 スコア：
 <span id="score">0</span>
-</p>
 
+<br>
 
-<p>
+コイン：
+<span id="coin">0</span>
+
+<br>
+
 ステージ：
 <span id="stage">1</span>
-</p>
+
+<br>
+
+HP：
+<span id="hp">3</span>
 
 
-<p>
-残機：
-<span id="life">3</span>
-</p>
+</div>
 
 
-<canvas id="game" width="360" height="600"></canvas>
+
+
+<canvas id="canvas" width="360" height="600"></canvas>
 
 
 <br>
@@ -91,12 +119,15 @@ border-radius:10px;
 <script>
 
 
+
 const canvas=
-document.getElementById("game");
+document.getElementById("canvas");
 
 
 const ctx=
 canvas.getContext("2d");
+
+
 
 
 
@@ -105,13 +136,22 @@ let running=false;
 
 let score=0;
 
-let life=3;
+
+let coin=0;
+
 
 let stage=1;
 
 
+let hp=3;
+
+
+
+// ボール
+
 
 let ball={
+
 
 x:180,
 
@@ -121,13 +161,22 @@ r:8,
 
 dx:4,
 
-dy:-4
+dy:-4,
+
+
+power:1
+
 
 };
 
 
 
+
+// パドル
+
+
 let paddle={
+
 
 x:140,
 
@@ -135,35 +184,41 @@ y:560,
 
 w:80,
 
-h:12
+h:12,
+
+
+level:1
+
 
 };
 
 
 
 
+
+// ブロック
+
+
 let blocks=[];
 
 
 
-function makeBlocks(){
+function createBlocks(){
 
 
 blocks=[];
 
 
-for(
-let y=0;
-y<5+stage;
-y++
-){
+let rows=
+5+Math.floor(stage/2);
 
 
-for(
-let x=0;
-x<8;
-x++
-){
+
+for(let y=0;y<rows;y++){
+
+
+for(let x=0;x<8;x++){
+
 
 
 blocks.push({
@@ -176,9 +231,15 @@ w:38,
 
 h:18,
 
-hp:stage,
+hp:1+Math.floor(stage/5),
+
+type:
+Math.random()<0.1?
+"hard":
+"normal",
 
 alive:true
+
 
 });
 
@@ -189,7 +250,9 @@ alive:true
 }
 
 
+
 }
+
 
 
 
@@ -199,13 +262,19 @@ alive:true
 function draw(){
 
 
+
 ctx.clearRect(
 0,
 0,
-360,
-600
+canvas.width,
+canvas.height
 );
 
+
+
+
+
+// ボール
 
 
 ctx.fillStyle="white";
@@ -228,43 +297,70 @@ ctx.fill();
 
 
 
+
+// パドル
+
+
 ctx.fillStyle="cyan";
 
 
 ctx.fillRect(
+
 paddle.x,
+
 paddle.y,
+
 paddle.w,
+
 paddle.h
+
 );
 
 
+
+
+
+
+// ブロック
 
 
 for(let b of blocks){
 
 
-if(b.alive){
+
+if(!b.alive)
+continue;
 
 
-ctx.fillStyle="red";
+
+ctx.fillStyle=
+b.type==="hard"?
+"orange":
+"red";
+
 
 
 ctx.fillRect(
+
 b.x,
+
 b.y,
+
 b.w,
+
 b.h
+
 );
 
 
-}
-
 
 }
 
 
+
 }
+
+
 
 
 
@@ -280,30 +376,29 @@ return;
 
 ball.x+=ball.dx;
 
+
 ball.y+=ball.dy;
 
 
 
 
-if(
-ball.x<0||
-ball.x>360
-){
+
+if(ball.x<0||ball.x>360)
 
 ball.dx*=-1;
 
-}
 
 
-
-if(ball.y<0){
+if(ball.y<0)
 
 ball.dy*=-1;
 
-}
 
 
 
+
+
+// パドル判定
 
 
 if(
@@ -316,27 +411,33 @@ ball.x<=paddle.x+paddle.w
 
 ){
 
+
 ball.dy=-Math.abs(ball.dy);
+
+
 
 }
 
 
 
 
+// 落下
+
 
 if(ball.y>600){
 
 
-life--;
+hp--;
 
 
-document.getElementById("life").innerText=life;
+document.getElementById("hp").innerText=hp;
 
 
 resetBall();
 
 
-if(life<=0){
+
+if(hp<=0){
 
 
 running=false;
@@ -348,16 +449,17 @@ alert("ゲームオーバー");
 }
 
 
+
 }
 
 
 
-
-hit();
+hitBlock();
 
 
 
 draw();
+
 
 
 requestAnimationFrame(update);
@@ -369,11 +471,13 @@ requestAnimationFrame(update);
 
 
 
-function hit(){
+
+
+function hitBlock(){
+
 
 
 for(let b of blocks){
-
 
 
 if(!b.alive)
@@ -394,6 +498,7 @@ ball.y<b.y+b.h
 ){
 
 
+
 b.hp--;
 
 
@@ -404,68 +509,23 @@ ball.dy*=-1;
 if(b.hp<=0){
 
 
+
 b.alive=false;
 
 
-score+=10;
+
+score+=20;
+
+
+coin+=5;
+
 
 
 document.getElementById("score").innerText=score;
 
 
-}
+document.getElementById("coin").innerText=coin;
 
-
-
-}
-
-
-}
-
-
-
-clearCheck();
-
-
-}
-
-
-
-
-
-function clearCheck(){
-
-
-let remain=false;
-
-
-
-for(let b of blocks){
-
-
-if(b.alive){
-
-remain=true;
-
-}
-
-}
-
-
-
-if(!remain){
-
-
-stage++;
-
-
-document.getElementById("stage").innerText=stage;
-
-
-makeBlocks();
-
-
-resetBall();
 
 
 }
@@ -476,72 +536,13 @@ resetBall();
 
 
 
-
-
-function resetBall(){
-
-
-ball.x=180;
-
-ball.y=400;
-
-ball.dx=4;
-
-ball.dy=-4;
-
-
 }
 
-
-
-
-
-function startGame(){
-
-
-if(!running){
-
-
-running=true;
-
-
-update();
-
-
-}
-
-
-}
-
-
-
-function resetGame(){
-
-
-score=0;
-
-life=3;
-
-stage=1;
-
-
-document.getElementById("score").innerText=0;
-
-document.getElementById("life").innerText=3;
-
-document.getElementById("stage").innerText=1;
-
-
-makeBlocks();
-
-resetBall();
-
-draw();
 
 
 }// ============================
 // Part2
-// 操作・アイテム・追加機能
+// 強化・ショップ・アイテム
 // ============================
 
 
@@ -549,44 +550,41 @@ draw();
 let items=[];
 
 
-let highScore=
-Number(localStorage.getItem("highScore"))||0;
+
+let ballUpgrade=1;
+
+let paddleUpgrade=1;
+
+
 
 
 
 // ----------------------------
-// マウス操作
+// 表示更新
 // ----------------------------
 
 
-canvas.addEventListener(
-"mousemove",
-function(e){
+
+function updateInfo(){
 
 
-let rect=
-canvas.getBoundingClientRect();
+document.getElementById("score").innerText=
+score;
 
 
-
-paddle.x=
-e.clientX-
-rect.left-
-paddle.w/2;
+document.getElementById("coin").innerText=
+coin;
 
 
-
-if(paddle.x<0)
-paddle.x=0;
-
+document.getElementById("stage").innerText=
+stage;
 
 
-if(paddle.x+paddle.w>360)
-paddle.x=360-paddle.w;
+document.getElementById("hp").innerText=
+hp;
 
 
-
-});
+}
 
 
 
@@ -594,46 +592,118 @@ paddle.x=360-paddle.w;
 
 
 // ----------------------------
-// スマホ操作
+// ボール強化
 // ----------------------------
 
 
 
-canvas.addEventListener(
-"touchmove",
-function(e){
+function upgradeBall(){
 
 
-let rect=
-canvas.getBoundingClientRect();
-
-
-
-paddle.x=
-e.touches[0].clientX-
-rect.left-
-paddle.w/2;
+let cost=
+100*ballUpgrade;
 
 
 
-if(paddle.x<0)
-paddle.x=0;
+if(coin>=cost){
+
+
+coin-=cost;
+
+
+ballUpgrade++;
+
+
+ball.dx*=1.15;
+
+
+ball.dy*=1.15;
 
 
 
-if(paddle.x+paddle.w>360)
-paddle.x=360-paddle.w;
+alert(
+"ボール強化 Lv"+
+ballUpgrade
+);
 
 
 
-e.preventDefault();
+}else{
+
+
+alert(
+"コイン不足"
+);
+
+
+}
+
+
+updateInfo();
 
 
 
-},
-{
-passive:false
-});
+}
+
+
+
+
+
+
+
+// ----------------------------
+// パドル強化
+// ----------------------------
+
+
+
+function upgradePaddle(){
+
+
+
+let cost=
+150*paddleUpgrade;
+
+
+
+if(coin>=cost){
+
+
+coin-=cost;
+
+
+paddleUpgrade++;
+
+
+paddle.w+=15;
+
+
+
+alert(
+"パドル強化 Lv"+
+paddleUpgrade
+);
+
+
+
+}else{
+
+
+alert(
+"コイン不足"
+);
+
+
+}
+
+
+
+updateInfo();
+
+
+}
+
+
 
 
 
@@ -646,11 +716,10 @@ passive:false
 
 
 
-function createItem(x,y){
+function dropItem(x,y){
 
 
 if(Math.random()<0.25){
-
 
 
 items.push({
@@ -660,9 +729,9 @@ x:x,
 y:y,
 
 type:
-Math.random()<0.5?
-"wide":
-"power"
+Math.floor(
+Math.random()*3
+)
 
 
 });
@@ -673,6 +742,8 @@ Math.random()<0.5?
 
 
 }
+
+
 
 
 
@@ -696,7 +767,10 @@ i--
 ){
 
 
-let item=items[i];
+
+let item=
+items[i];
+
 
 
 item.y+=3;
@@ -706,43 +780,57 @@ item.y+=3;
 
 if(
 
-item.y>paddle.y&&
+item.y>=paddle.y&&
 
-item.x>paddle.x&&
+item.x>=paddle.x&&
 
-item.x<paddle.x+paddle.w
+item.x<=paddle.x+paddle.w
 
 ){
 
 
 
-if(item.type==="wide"){
+if(item.type===0){
 
+
+// パドル拡大
 
 
 paddle.w+=30;
 
 
-
-setTimeout(function(){
+setTimeout(()=>{
 
 paddle.w-=30;
 
-},5000);
 
+},5000);
 
 
 }
 
 
 
-if(item.type==="power"){
+if(item.type===1){
 
 
-ball.dx*=1.2;
+// 貫通力
 
-ball.dy*=1.2;
 
+ball.power++;
+
+
+}
+
+
+
+if(item.type===2){
+
+
+// コイン
+
+
+coin+=100;
 
 
 }
@@ -750,7 +838,6 @@ ball.dy*=1.2;
 
 
 items.splice(i,1);
-
 
 
 }
@@ -779,6 +866,7 @@ items.splice(i,1);
 
 
 
+
 // ----------------------------
 // アイテム描画
 // ----------------------------
@@ -793,10 +881,19 @@ for(let item of items){
 
 
 
-ctx.fillStyle=
-item.type==="wide"?
-"yellow":
-"lime";
+if(item.type===0)
+
+ctx.fillStyle="yellow";
+
+
+if(item.type===1)
+
+ctx.fillStyle="lime";
+
+
+if(item.type===2)
+
+ctx.fillStyle="gold";
 
 
 
@@ -832,14 +929,15 @@ item.y,
 
 
 
-let oldDraw=draw;
+let oldDraw2=draw;
 
 
 
 draw=function(){
 
 
-oldDraw();
+
+oldDraw2();
 
 
 drawItems();
@@ -854,16 +952,16 @@ drawItems();
 
 
 // ----------------------------
-// ブロック破壊時アイテム追加
+// ブロック破壊拡張
 // ----------------------------
 
 
 
-let oldHit=hit;
+let oldHitBlock=hitBlock;
 
 
 
-hit=function(){
+hitBlock=function(){
 
 
 
@@ -889,6 +987,7 @@ ball.y<b.y+b.h
 ){
 
 
+
 b.hp--;
 
 
@@ -904,25 +1003,21 @@ b.alive=false;
 
 
 
-score+=10;
+score+=20*stage;
 
 
-createItem(
+coin+=5*stage;
+
+
+
+dropItem(
 b.x,
 b.y
 );
 
 
 
-document.getElementById(
-"score"
-).innerText=score;
-
-
-
-}
-
-
+updateInfo();
 
 
 }
@@ -933,8 +1028,8 @@ document.getElementById(
 
 
 
+}
 
-clearCheck();
 
 
 
@@ -946,13 +1041,51 @@ clearCheck();
 
 
 
+
 // ----------------------------
-// 更新処理拡張
+// ショップUI
 // ----------------------------
 
 
 
-let oldUpdate=update;
+let shop=document.createElement("div");
+
+
+shop.innerHTML=
+
+`
+
+<h3>ショップ</h3>
+
+<button onclick="upgradeBall()">
+ボール強化
+</button>
+
+<button onclick="upgradePaddle()">
+パドル強化
+</button>
+
+`;
+
+
+
+document.body.insertBefore(
+shop,
+canvas
+);
+
+
+
+
+
+
+// ----------------------------
+// 更新拡張
+// ----------------------------
+
+
+
+let oldUpdate2=update;
 
 
 
@@ -963,107 +1096,34 @@ update=function(){
 updateItems();
 
 
-oldUpdate();
+oldUpdate2();
 
 
-
-};
-
-
-
-
-
-
-
-// ----------------------------
-// ハイスコア保存
-// ----------------------------
-
-
-
-function saveScore(){
-
-
-
-if(score>highScore){
-
-
-highScore=score;
-
-
-localStorage.setItem(
-"highScore",
-highScore
-);
-
-
-}
-
-
-
-}
-
-
-
-
-
-setInterval(
-saveScore,
-5000
-);// ============================
+};// ============================
 // Part3
-// UI追加・クリア処理・セーブ
+// ステージ・ボス・スキル
 // ============================
 
 
 
-let gameClear=false;
+let bossMode=false;
 
 
-let totalClear=0;
+let bossHP=0;
 
 
-
-// ----------------------------
-// ハイスコア表示
-// ----------------------------
-
-
-
-let highText=
-document.createElement("p");
-
-
-highText.innerHTML=
-"ハイスコア：<span id='high'>0</span>";
-
-
-document.body.insertBefore(
-highText,
-canvas
-);
-
-
-
-document.getElementById("high")
-.innerText=highScore;
-
-
-
+let skillCool=0;
 
 
 
 // ----------------------------
-// クリア判定強化
+// ステージクリア判定
 // ----------------------------
 
 
 
-let oldClearCheck=clearCheck;
+function checkStage(){
 
-
-
-clearCheck=function(){
 
 
 let remain=false;
@@ -1071,6 +1131,7 @@ let remain=false;
 
 
 for(let b of blocks){
+
 
 
 if(b.alive){
@@ -1082,6 +1143,7 @@ break;
 }
 
 
+
 }
 
 
@@ -1090,37 +1152,24 @@ if(!remain){
 
 
 
-totalClear++;
+stage++;
 
 
 
-if(stage>=10){
+if(stage%5===0){
+
+
+startBoss();
 
 
 
-gameClear=true;
+}else{
 
 
-running=false;
-
-
-
-alert(
-"🎉 完全クリア！\n"+
-"スコア："+score
-);
-
-
-
-return;
-
+createBlocks();
 
 
 }
-
-
-
-stage++;
 
 
 
@@ -1128,24 +1177,125 @@ document.getElementById(
 "stage"
 ).innerText=stage;
 
-
-
-makeBlocks();
 
 
 resetBall();
 
 
 
+}
+
+
+
+}
+
+
+
+
+
+
+// ----------------------------
+// ボス生成
+// ----------------------------
+
+
+
+function startBoss(){
+
+
+
+bossMode=true;
+
+
+bossHP=
+100+
+stage*50;
+
+
+
+blocks=[];
+
+
+
 alert(
-"ステージ "+
-stage+
-" 開始"
+"ボス出現！ HP "+
+bossHP
 );
 
 
 
 }
+
+
+
+
+// ----------------------------
+// ボス描画
+// ----------------------------
+
+
+
+function drawBoss(){
+
+
+
+if(!bossMode)
+return;
+
+
+
+ctx.fillStyle="purple";
+
+
+ctx.fillRect(
+
+60,
+
+80,
+
+240,
+
+40
+
+);
+
+
+
+ctx.fillStyle="white";
+
+
+ctx.fillText(
+
+"BOSS HP:"+bossHP,
+
+120,
+
+105
+
+);
+
+
+
+}
+
+
+
+
+
+
+// 描画追加
+
+
+let oldDraw3=draw;
+
+
+draw=function(){
+
+
+oldDraw3();
+
+
+drawBoss();
 
 
 
@@ -1157,39 +1307,142 @@ stage+
 
 
 
+// ----------------------------
+// ボス判定
+// ----------------------------
+
+
+
+function bossHit(){
+
+
+
+if(!bossMode)
+return;
+
+
+
+if(
+
+ball.y<130&&
+
+ball.x>60&&
+
+ball.x<300
+
+){
+
+
+
+bossHP-=ball.power;
+
+
+ball.dy*=-1;
+
+
+
+if(bossHP<=0){
+
+
+
+bossMode=false;
+
+
+
+coin+=500;
+
+
+score+=1000;
+
+
+
+alert(
+"ボス撃破！"
+);
+
+
+
+createBlocks();
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
 
 // ----------------------------
-// セーブ
+// スキル
 // ----------------------------
 
 
 
-function saveGame(){
+function skill(){
 
 
 
-let data={
+if(skillCool>0){
 
 
-score:score,
-
-life:life,
-
-stage:stage,
-
-highScore:highScore
+alert(
+"クールタイム中"
+);
 
 
-};
+return;
+
+
+}
 
 
 
-localStorage.setItem(
 
-"blockSave",
+skillCool=10;
 
-JSON.stringify(data)
 
+
+for(let b of blocks){
+
+
+
+if(b.alive){
+
+
+b.hp--;
+
+
+if(b.hp<=0){
+
+
+b.alive=false;
+
+
+score+=50;
+
+
+}
+
+
+}
+
+
+
+}
+
+
+
+alert(
+"全体攻撃！"
 );
 
 
@@ -1201,92 +1454,21 @@ JSON.stringify(data)
 
 
 // ----------------------------
-// ロード
+// クールタイム処理
 // ----------------------------
 
 
 
-function loadGame(){
+setInterval(()=>{
+
+
+if(skillCool>0)
+
+skillCool--;
 
 
 
-let data=
-localStorage.getItem(
-"blockSave"
-);
-
-
-
-if(data){
-
-
-
-let d=
-JSON.parse(data);
-
-
-
-score=d.score||0;
-
-life=d.life||3;
-
-stage=d.stage||1;
-
-highScore=d.highScore||0;
-
-
-
-document.getElementById(
-"score"
-).innerText=score;
-
-
-document.getElementById(
-"life"
-).innerText=life;
-
-
-document.getElementById(
-"stage"
-).innerText=stage;
-
-
-document.getElementById(
-"high"
-).innerText=highScore;
-
-
-
-makeBlocks();
-
-
-draw();
-
-
-
-}
-
-
-
-}
-
-
-
-
-
-// ----------------------------
-// 自動保存
-// ----------------------------
-
-
-
-setInterval(function(){
-
-
-saveGame();
-
-
-},30000);
+},1000);
 
 
 
@@ -1295,22 +1477,22 @@ saveGame();
 
 
 // ----------------------------
-// ボール角度調整
+// キーボード操作
 // ----------------------------
 
 
 
-canvas.addEventListener(
-"click",
-function(){
+document.addEventListener(
+
+"keydown",
+
+function(e){
 
 
-if(running){
+if(e.code==="Space"){
 
 
-ball.dx+=
-(Math.random()-0.5);
-
+skill();
 
 
 }
@@ -1325,106 +1507,26 @@ ball.dx+=
 
 
 
-loadGame();// ============================
-// Part4
-// 最終仕上げ
-// ============================
-
-
-
 // ----------------------------
-// 効果音
-// ----------------------------
-
-
-function sound(freq){
-
-
-try{
-
-
-let audio=
-new AudioContext();
-
-
-let osc=
-audio.createOscillator();
-
-
-let gain=
-audio.createGain();
-
-
-
-osc.frequency.value=freq;
-
-
-osc.connect(gain);
-
-
-gain.connect(
-audio.destination
-);
-
-
-
-osc.start();
-
-
-gain.gain.exponentialRampToValueAtTime(
-
-0.0001,
-
-audio.currentTime+0.1
-
-);
-
-
-osc.stop(
-audio.currentTime+0.1
-);
-
-
-
-}catch(e){}
-
-
-
-}
-
-
-
-
-
-
-// ----------------------------
-// ブロック破壊音
+// 判定拡張
 // ----------------------------
 
 
 
-let oldHit2=hit;
+let oldHitBlock3=hitBlock;
 
 
 
-hit=function(){
+hitBlock=function(){
 
 
-let before=score;
+oldHitBlock3();
 
 
-oldHit2();
+bossHit();
 
 
-
-if(score>before){
-
-
-sound(500);
-
-
-}
-
+checkStage();
 
 
 };
@@ -1436,26 +1538,74 @@ sound(500);
 
 
 // ----------------------------
-// ゲーム状態表示
+// ボールリセット
 // ----------------------------
 
 
 
-function showStatus(){
+function resetBall(){
 
 
-console.log(
 
-"Score:",
-score,
+ball.x=180;
 
-"Stage:",
-stage,
+ball.y=400;
 
-"Life:",
-life
+
+ball.dx=4;
+
+ball.dy=-4;
+
+
+
+}// ============================
+// Part4
+// セーブ・ロード・タイトル
+// ============================
+
+
+
+let gameStarted=false;
+
+
+
+// ----------------------------
+// セーブ
+// ----------------------------
+
+
+
+function saveData(){
+
+
+let data={
+
+score:score,
+
+coin:coin,
+
+stage:stage,
+
+hp:hp,
+
+ballUpgrade:ballUpgrade,
+
+paddleUpgrade:paddleUpgrade,
+
+paddleWidth:paddle.w
+
+};
+
+
+
+localStorage.setItem(
+
+"ultimateBlockSave",
+
+JSON.stringify(data)
 
 );
+
 
 
 }
@@ -1466,11 +1616,127 @@ life
 
 
 
-setInterval(
+// ----------------------------
+// ロード
+// ----------------------------
 
-showStatus,
 
-5000
+
+function loadData(){
+
+
+
+let save=
+
+localStorage.getItem(
+"ultimateBlockSave"
+);
+
+
+
+if(!save)
+return;
+
+
+
+let data=
+JSON.parse(save);
+
+
+
+score=data.score||0;
+
+coin=data.coin||0;
+
+stage=data.stage||1;
+
+hp=data.hp||3;
+
+
+ballUpgrade=
+data.ballUpgrade||1;
+
+
+paddleUpgrade=
+data.paddleUpgrade||1;
+
+
+paddle.w=
+data.paddleWidth||80;
+
+
+
+updateInfo();
+
+
+createBlocks();
+
+
+draw();
+
+
+
+}
+
+
+
+
+
+
+
+// ----------------------------
+// 自動保存
+// ----------------------------
+
+
+
+setInterval(function(){
+
+
+saveData();
+
+
+},30000);
+
+
+
+
+
+
+
+// ----------------------------
+// スタート画面
+// ----------------------------
+
+
+
+let title=
+
+document.createElement("div");
+
+
+
+title.innerHTML=
+
+`
+
+<h2>
+Ultimate Block Breaker
+</h2>
+
+<p>
+コインを集めて強化しよう
+</p>
+
+`;
+
+
+
+document.body.insertBefore(
+
+title,
+
+canvas
 
 );
 
@@ -1479,13 +1745,16 @@ showStatus,
 
 
 
+
+
 // ----------------------------
-// ゲームオーバー改善
+// 開始処理強化
 // ----------------------------
 
 
 
-let oldStart=startGame;
+let oldStartGame=
+startGame;
 
 
 
@@ -1493,24 +1762,16 @@ startGame=function(){
 
 
 
-if(gameClear){
+gameStarted=true;
 
 
-resetGame();
-
-
-gameClear=false;
-
-
-}
-
-
-
-oldStart();
+oldStartGame();
 
 
 
 };
+
+
 
 
 
@@ -1523,7 +1784,8 @@ oldStart();
 
 
 
-let oldReset=resetGame;
+let oldResetGame=
+resetGame;
 
 
 
@@ -1531,25 +1793,42 @@ resetGame=function(){
 
 
 
-oldReset();
+score=0;
+
+coin=0;
+
+stage=1;
+
+hp=3;
 
 
+ballUpgrade=1;
 
-items=[];
+paddleUpgrade=1;
 
 
 paddle.w=80;
 
 
-ball.dx=4;
-
-ball.dy=-4;
+items=[];
 
 
-gameClear=false;
+bossMode=false;
 
 
-saveGame();
+createBlocks();
+
+
+resetBall();
+
+
+updateInfo();
+
+
+draw();
+
+
+saveData();
 
 
 
@@ -1560,8 +1839,253 @@ saveGame();
 
 
 
+
 // ----------------------------
-// 初期化
+// キャンバス内表示
+// ----------------------------
+
+
+
+function drawText(){
+
+
+
+ctx.fillStyle="white";
+
+
+ctx.font="16px sans-serif";
+
+
+if(!running){
+
+
+
+ctx.fillText(
+
+"STARTボタンで開始",
+
+90,
+
+300
+
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+let oldDraw4=draw;
+
+
+
+draw=function(){
+
+
+oldDraw4();
+
+
+drawText();
+
+
+};
+
+
+
+
+
+
+
+// ----------------------------
+// 初期ロード
+// ----------------------------
+
+
+
+loadData();
+
+
+updateInfo();
+
+
+draw();// ============================
+// Part5
+// 最終調整・終了処理
+// ============================
+
+
+
+// ----------------------------
+// ゲーム終了処理
+// ----------------------------
+
+
+
+function gameOver(){
+
+
+running=false;
+
+
+
+alert(
+
+"ゲームオーバー\n"+
+"スコア："+score
+
+);
+
+
+
+saveData();
+
+
+}
+
+
+
+
+
+
+
+// HP監視強化
+
+
+let oldUpdate5=update;
+
+
+
+update=function(){
+
+
+
+if(hp<=0){
+
+
+gameOver();
+
+
+return;
+
+
+}
+
+
+
+oldUpdate5();
+
+
+
+};
+
+
+
+
+
+
+
+
+// ----------------------------
+// クリア判定
+// ----------------------------
+
+
+
+function finalCheck(){
+
+
+
+if(stage>=20){
+
+
+
+running=false;
+
+
+
+alert(
+
+"🎉 完全クリア！\n"+
+"最終スコア："+score
+
+);
+
+
+
+saveData();
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+setInterval(function(){
+
+
+
+finalCheck();
+
+
+},1000);
+
+
+
+
+
+
+// ----------------------------
+// 安全処理
+// ----------------------------
+
+
+
+setInterval(function(){
+
+
+
+if(score<0)
+
+score=0;
+
+
+if(coin<0)
+
+coin=0;
+
+
+if(hp<0)
+
+hp=0;
+
+
+
+updateInfo();
+
+
+
+},5000);
+
+
+
+
+
+
+
+// ----------------------------
+// 初期描画
 // ----------------------------
 
 
@@ -1569,8 +2093,10 @@ saveGame();
 makeBlocks();
 
 
-draw();
+updateInfo();
 
+
+draw();
 
 
 
